@@ -1,0 +1,142 @@
+import { SECTORS } from '../constants/sectors';
+import { REC_CLS } from '../constants/tabs';
+
+// ═══════════════════════════════════════════════════════════════
+// UI ATOM COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
+export function Tooltip({ text, children }) {
+    return (
+        <div className="group relative flex items-center justify-center">
+            {children}
+            <div className="pointer-events-none absolute bottom-full mb-2 hidden w-48 rounded-lg bg-zinc-900 border border-zinc-800 p-2 text-[10px] text-zinc-300 shadow-2xl group-hover:block z-50 animate-in fade-in slide-in-from-bottom-1">
+                {text}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-900" />
+            </div>
+        </div>
+    );
+}
+
+export function Chip({ t, sm }) {
+    const text = t === "BUY" ? "Recommended for entry based on bullish signals." :
+        t === "SELL" ? "Recommended for exit or shorting based on bearish signals." :
+            "Neutral stance, awaiting further price action.";
+    return (
+        <Tooltip text={text}>
+            <span className={`font-bold border tracking-widest uppercase transition-all duration-300 ${sm ? "text-[8px] px-1.5 py-0.5 rounded" : "text-[10px] px-2.5 py-1 rounded-xl"} ${REC_CLS[t] || "bg-zinc-800 text-zinc-400 border-zinc-700"} shadow-sm`}>
+                {t}
+            </span>
+        </Tooltip>
+    );
+}
+
+export function Ring({ score, size = 44, stroke = 2.5 }) {
+    const r = size / 2 - stroke * 1.5, circ = 2 * Math.PI * r;
+    const col = score >= 75 ? "#10b981" : score >= 60 ? "#10b981" : score >= 45 ? "#f59e0b" : "#ef4444";
+    const text = `AI Aggregated Score: ${score}/100. ${score >= 75 ? "Strong technical alignment." : score >= 45 ? "Moderate risk/reward profile." : "High technical risk."}`;
+    return (
+        <Tooltip text={text}>
+            <div style={{ width: size, height: size }} className="relative flex items-center justify-center flex-shrink-0 group">
+                <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-md" style={{ color: col }} />
+                <svg className="-rotate-90 drop-shadow-sm" width={size} height={size}>
+                    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1f2937" strokeWidth={stroke} strokeOpacity="0.4" />
+                    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={col} strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={circ * (1 - score / 100)} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }} />
+                </svg>
+                <span className="absolute font-display font-bold text-white tracking-tighter" style={{ fontSize: size * 0.28 }}>{score}</span>
+            </div>
+        </Tooltip>
+    );
+}
+
+export function Spark({ data, w = 80, h = 26 }) {
+    if (!data?.length) return null;
+    const mn = Math.min(...data), mx = Math.max(...data), range = mx - mn || 1;
+    const pts = data.map((v, i) => `${(i / (data.length - 1) * w).toFixed(1)},${(h - ((v - mn) / range * h)).toFixed(1)}`).join(" ");
+    return (<svg width={w} height={h} className="drop-shadow-sm"><polyline points={pts} fill="none" stroke={data[data.length - 1] >= data[0] ? "#10b981" : "#ef4444"} strokeWidth="1.5" strokeLinejoin="round" /></svg>);
+}
+
+export function SigBar({ sigs }) {
+    if (!sigs?.length) return null;
+    const bull = sigs.filter(s => s.bull).length;
+    const desc = sigs.map(s => `${s.name}: ${s.bull ? "▲" : "▼"}`).join(", ");
+    return (
+        <Tooltip text={`Aggregated Signals: ${desc}`}>
+            <div className="flex gap-px items-center">
+                {sigs.map((s, i) => <div key={i} style={{ opacity: Math.min(1, 0.4 + s.w * 0.1) }} className={`h-1.5 rounded-sm flex-1 ${s.bull ? "bg-emerald-500" : "bg-red-500"}`} />)}
+                <span className="text-[10px] text-zinc-400 ml-1 font-mono w-8 text-right font-bold">{bull}/{sigs.length}</span>
+            </div>
+        </Tooltip>
+    );
+}
+
+export function SecDot({ sector }) {
+    const col = Object.entries(SECTORS).find(([k]) => k === sector)?.[1]?.color || "#6b7280";
+    return (
+        <Tooltip text={sector}>
+            <span style={{ background: col }} className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm border border-white/10" />
+        </Tooltip>
+    );
+}
+
+export function RsBadge({ rs }) {
+    if (!rs) return null;
+    const isHigh = rs >= 80;
+    const text = `Relative Strength Index: ${rs}/100. Measures stock performance against the market index. 80+ is superior.`;
+    return (
+        <Tooltip text={text}>
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border transition-all ${isHigh ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400 font-bold shadow-[0_0_10px_-4px_rgba(6,182,212,0.4)]" : "bg-zinc-800/50 border-zinc-700/50 text-zinc-400 font-bold"}`}>
+                <span className="text-[8px] uppercase tracking-widest opacity-80">RS</span>
+                <span className="text-[10px] font-display font-bold leading-none">{rs}</span>
+            </div>
+        </Tooltip>
+    );
+}
+
+export function MvnBadge({ mvn }) {
+    if (!mvn) return null;
+    const text = mvn.pass ? "Trend Template Passed: Stock is in a verified Stage 2 uptrend according to Mark Minervini." : `${mvn.passCount}/8 Criteria Met. Follows the Mark Minervini blueprint for high-growth stocks.`;
+    return (
+        <Tooltip text={text}>
+            {mvn.pass
+                ? <div className="bg-amber-500/10 border border-amber-500/30 text-amber-500 px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-[0_0_12px_-5px_rgba(245,158,11,0.3)] border-amber-400">
+                    <span className="text-[9px]">📐</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">MVN</span>
+                </div>
+                : <div className="bg-zinc-800/40 border border-zinc-700 text-zinc-400 px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                    {mvn.passCount}/8
+                </div>}
+        </Tooltip>
+    );
+}
+
+export function StageBadge({ stage }) {
+    if (!stage || stage.stage === 0) return null;
+    const text = `Stan Weinstein Stage ${stage.stage}: ${stage.label}. Most gains are made in Stage 2. Avoid Stage 4.`;
+    return (
+        <Tooltip text={text}>
+            <div className="flex items-center gap-2 px-2 py-0.5 rounded-lg border shadow-sm" style={{ color: stage.color, borderColor: `${stage.color}40`, backgroundColor: `${stage.color}15` }}>
+                <div className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: stage.color }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">{stage.label.split(" — ")[1] || stage.label}</span>
+            </div>
+        </Tooltip>
+    );
+}
+
+export function CandleBadge({ patterns }) {
+    if (!patterns?.length) return null;
+    const top = patterns.sort((a, b) => b.strength - a.strength)[0];
+    const text = `Candlestick Pattern: ${top.name}. Signal Strength: ${top.strength}/3. Indicates ${top.bull ? "Bullish" : "Bearish"} sentiment.`;
+    return (
+        <Tooltip text={text}>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border font-bold uppercase tracking-widest ${top.bull ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}>
+                <span className="text-[9px]">🕯️</span>
+                <span className="text-[10px] whitespace-nowrap">{top.name}</span>
+            </div>
+        </Tooltip>
+    );
+}
+
+export function fmtMcap(n) {
+    if (!n) return "—"; if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`; if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`; return `$${(n / 1e6).toFixed(0)}M`;
+}
+
