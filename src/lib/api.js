@@ -59,7 +59,7 @@ export async function fetchNews(sym) {
     });
 
     const score = pos - neg;
-    const sentiment = score > 1 ? "POSITIVE 📈" : score < -1 ? "NEGATIVE 📉" : "NEUTRAL";
+    const sentiment = score > 1 ? "POZİTİF 📈" : score < -1 ? "NEGATİF 📉" : "NÖTR";
     return { news, sentiment, sentimentScore: score };
 }
 

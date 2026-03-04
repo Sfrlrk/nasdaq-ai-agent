@@ -15,7 +15,7 @@ export function SigAnalysis({ stocks }) {
         const nl = [...log, ...snap].slice(-600);
         setLog(nl);
         storage.set("sig_log_v4", JSON.stringify(nl)).catch(() => { });
-        alert(`${snap.length} signals captured for analysis.`);
+        alert(`${snap.length} sinyal analiz için kaydedildi.`);
     };
 
     const compute = entries => {
@@ -54,25 +54,25 @@ export function SigAnalysis({ stocks }) {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "claude-3-5-sonnet-20241022", max_tokens: 800,
-                    messages: [{ role: "user", content: `You are a Nasdaq signal analyst. English, max 200 words.\nTotal: ${res.total} signals, ${res.winRate}% success, avg ${res.avgRet}%\nMinervini Winrate: ${res.mvnWr}% (${res.mvnN} signals)\nVCP Winrate: ${res.vcpWr}% (${res.vcpN} signals)\nAccuracy by Verdict: ${Object.entries(res.byRec).map(([k, v]) => `${k}:${v.wr}%(${v.n})`).join(", ")}\nTop Losses: ${res.mistakes?.slice(0, 5).map(m => `${m.symbol}:${m.rec}→${m.outcome.ret}%`).join(", ")}\nQuestion: 1) Is Minervini/VCP working? 2) Where are the weaknesses? 3) Propose 2 specific improvements.` }]
+                    messages: [{ role: "user", content: `Bir Nasdaq sinyal analistisin. Türkçe cevap ver, maksimum 200 kelime.\nToplam: ${res.total} sinyal, %${res.winRate} başarı, ortalama %${res.avgRet}\nMinervini Başarı Oranı: %${res.mvnWr} (${res.mvnN} sinyal)\nVCP Başarı Oranı: %${res.vcpWr} (${res.vcpN} sinyal)\nKarara Göre Doğruluk: ${Object.entries(res.byRec).map(([k, v]) => `${k}:%${v.wr}(${v.n})`).join(", ")}\nEn Büyük Kayıplar: ${res.mistakes?.slice(0, 5).map(m => `${m.symbol}:${m.rec}→%${m.outcome.ret}`).join(", ")}\nSoru: 1) Minervini/VCP çalışıyor mu? 2) Zayıf yönler nerede? 3) 2 spesifik iyileştirme öner.` }]
                 })
             });
             const d = await r.json();
-            setAiT(d.content?.map(b => b.text || "").join("") || "No response received.");
-        } catch { setAiT("⚠️ AI Relay Error via Proxy."); } setLd(false);
+            setAiT(d.content?.map(b => b.text || "").join("") || "Yanıt alınamadı.");
+        } catch { setAiT("⚠️ Proxy üzerinden AI bağlantı hatası."); } setLd(false);
     };
 
     return (
         <div>
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <button onClick={capture} className="py-5 rounded-[2rem] bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all flex items-center justify-center gap-2">📸 Snapshot Port</button>
-                <button onClick={evaluate} className="py-5 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-bold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">📊 Deep Audit</button>
+                <button onClick={capture} className="py-5 rounded-[2rem] bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all flex items-center justify-center gap-2">📸 Portföy Anlık Görüntü</button>
+                <button onClick={evaluate} className="py-5 rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-bold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">📊 Derin Denetim</button>
             </div>
 
             {res && !res.empty && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-3 gap-4">
-                        {[["Analysis Pool", res.total, "text-white"], ["Win Rate", `${res.winRate}%`, parseFloat(res.winRate) >= 55 ? "text-emerald-400" : "text-amber-400"], ["Avg Alpha", `${res.avgRet}%`, parseFloat(res.avgRet) >= 0 ? "text-emerald-400" : "text-red-400"]].map(([l, v, c]) => (
+                        {[["Analiz Havuzu", res.total, "text-white"], ["Başarı Oranı", `%${res.winRate}`, parseFloat(res.winRate) >= 55 ? "text-emerald-400" : "text-amber-400"], ["Ort. Alfa", `%${res.avgRet}`, parseFloat(res.avgRet) >= 0 ? "text-emerald-400" : "text-red-400"]].map(([l, v, c]) => (
                             <div key={l} className="rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-4 text-center shadow-lg">
                                 <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">{l}</div>
                                 <div className={`text-xl font-display font-bold ${c}`}>{v}</div>
@@ -83,29 +83,29 @@ export function SigAnalysis({ stocks }) {
                     {/* Minervini & VCP cards - using static class names for Tailwind */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 text-center">
-                            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-widest mb-2">📐 Minervini Accuracy</div>
+                            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-widest mb-2">📐 Minervini Doğruluğu</div>
                             <div className={`text-2xl font-display font-bold ${parseFloat(res.mvnWr) >= 55 ? "text-emerald-400" : "text-amber-400"}`}>{res.mvnWr}%</div>
-                            <div className="text-[10px] text-zinc-600 font-bold uppercase mt-1">{res.mvnN} Samples</div>
+                            <div className="text-[10px] text-zinc-600 font-bold uppercase mt-1">{res.mvnN} Örnek</div>
                         </div>
                         <div className="rounded-[2rem] border border-orange-500/20 bg-orange-500/5 p-6 text-center">
-                            <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-2">🔥 VCP Performance</div>
+                            <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mb-2">🔥 VCP Performansı</div>
                             <div className={`text-2xl font-display font-bold ${parseFloat(res.vcpWr) >= 55 ? "text-emerald-400" : "text-orange-400"}`}>{res.vcpWr}%</div>
-                            <div className="text-[10px] text-zinc-600 font-bold uppercase mt-1">{res.vcpN} Samples</div>
+                            <div className="text-[10px] text-zinc-600 font-bold uppercase mt-1">{res.vcpN} Örnek</div>
                         </div>
                     </div>
 
                     <div className="rounded-[2.5rem] border border-zinc-800/60 bg-zinc-900/40 overflow-hidden shadow-2xl">
                         <div className="bg-zinc-800/40 px-6 py-4 border-b border-zinc-800/60">
-                            <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Signal Verdict Analysis</h4>
+                            <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sinyal Kararı Analizi</h4>
                         </div>
                         <div className="divide-y divide-zinc-800/40">
                             {Object.entries(res.byRec).map(([rec, v]) => (
                                 <div key={rec} className="flex justify-between items-center px-6 py-4 hover:bg-zinc-800/20 transition-all">
                                     <Chip t={rec} sm />
                                     <div className="flex gap-6 items-center">
-                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Volume</div><div className="text-sm font-display font-bold text-white">{v.n}</div></div>
-                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Win %</div><div className={`text-sm font-display font-bold ${parseFloat(v.wr) >= 55 ? "text-emerald-400" : "text-red-400"}`}>{v.wr}%</div></div>
-                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Alpha</div><div className={`text-sm font-display font-bold ${parseFloat(v.ar) >= 0 ? "text-emerald-400" : "text-red-400"}`}>{v.ar}%</div></div>
+                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Hacim</div><div className="text-sm font-display font-bold text-white">{v.n}</div></div>
+                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Başarı %</div><div className={`text-sm font-display font-bold ${parseFloat(v.wr) >= 55 ? "text-emerald-400" : "text-red-400"}`}>{v.wr}%</div></div>
+                                        <div className="text-right"><div className="text-[9px] text-zinc-600 font-bold uppercase">Alfa</div><div className={`text-sm font-display font-bold ${parseFloat(v.ar) >= 0 ? "text-emerald-400" : "text-red-400"}`}>{v.ar}%</div></div>
                                     </div>
                                 </div>
                             ))}
@@ -116,21 +116,21 @@ export function SigAnalysis({ stocks }) {
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-xl">🤖</div>
                             <div>
-                                <h4 className="text-base font-display font-bold text-white">AI Quantitative Insight</h4>
-                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Powered by Claude Analytic Engine</p>
+                                <h4 className="text-base font-display font-bold text-white">YZ Kantitatif Analiz</h4>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Claude Analitik Motoru Destekli</p>
                             </div>
                         </div>
                         {aiT ? (
                             <div className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/40 rounded-3xl p-6 border border-zinc-800/60 whitespace-pre-wrap font-medium">{aiT}</div>
                         ) : (
                             <button onClick={askClaude} disabled={ld} className={`w-full py-5 rounded-[2rem] text-sm font-bold border transition-all ${ld ? "bg-cyan-900/40 text-cyan-400 border-cyan-800 animate-pulse" : "bg-cyan-500 text-black border-cyan-500 hover:bg-cyan-400 shadow-xl shadow-cyan-500/10"}`}>
-                                {ld ? "Quantum Computing in Progress..." : "Run Performance Forecast"}
+                                {ld ? "Kuantum Hesaplama Devam Ediyor..." : "Performans Tahminini Çalıştır"}
                             </button>
                         )}
                     </div>
                 </div>
             )}
-            {res?.empty && <div className="text-center text-zinc-600 py-24 font-medium italic opacity-60">Collect at least 48 hours of signal data for quantitative analysis.</div>}
+            {res?.empty && <div className="text-center text-zinc-600 py-24 font-medium italic opacity-60">Kantitatif analiz için en az 48 saatlik sinyal verisi toplayın.</div>}
         </div>
     );
 }

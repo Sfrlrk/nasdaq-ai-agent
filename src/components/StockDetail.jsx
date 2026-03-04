@@ -23,46 +23,46 @@ export function StockDetail({ stock, onClose, isModal }) {
         const bs = stock.signals?.filter(s => s.bull).map(s => s.name).join(", ") || "none";
         const as_ = stock.signals?.filter(s => !s.bull).map(s => s.name).join(", ") || "none";
         const candleStr = stock.candlePatterns?.map(p => `${p.name}(${p.bull ? "Bull" : "Bear"}×${p.strength})`).join(", ") || "none";
-        const mvnStr = stock.minervini ? `${stock.minervini.passCount}/8 conditions (${stock.minervini.pass ? "PASS" : "FAIL"})` : "—";
-        const p = `Act as a senior Wall Street quantitative analyst. Provide a professional technical analysis for ${stock.symbol} in English. Max 250 words. Be precise and actionable.
+        const mvnStr = stock.minervini ? `${stock.minervini.passCount}/8 koşul (${stock.minervini.pass ? "GEÇTİ" : "KALDI"})` : "—";
+        const p = `Kıdemli bir Wall Street kantitatif analisti gibi davran. ${stock.symbol} için profesyonel bir teknik analiz sağla. TÜRKÇE cevap ver, maksimum 250 kelime. Kesin ve uygulanabilir ol.
 
-ASSET: ${stock.symbol} | $${stock.price} (${stock.change >= 0 ? "+" : ""}${stock.change}%) | ${stock.sector}
-AI SCORE: ${stock.score}/100 (${stock.rec}) | Stage: ${stock.stage?.label || "?"} | RS Rating: ${stock.rsRating || "?"}
+VARLIK: ${stock.symbol} | $${stock.price} (${stock.change >= 0 ? "+" : ""}${stock.change}%) | ${stock.sector}
+YZ PUANI: ${stock.score}/100 (${stock.rec}) | Aşama: ${stock.stage?.label || "?"} | RS Puanı: ${stock.rsRating || "?"}
 
-TECHNICAL SIGNALS:
-Bullish: ${bs}
-Bearish: ${as_}
+TEKNİK SİNYALLER:
+Boğa: ${bs}
+Ayı: ${as_}
 
-CANDLESTICK PATTERNS: ${candleStr}
-MINERVINI TEMPLATE: ${mvnStr}
-VCP PATTERN: ${stock.isVCP ? "DETECTED 🔥" : "None"}
+MUM GRAFİĞİ FORMASYONLARI: ${candleStr}
+MINERVINI ŞABLONU: ${mvnStr}
+VCP FORMASYONU: ${stock.isVCP ? "TESPİT EDİLDİ 🔥" : "Yok"}
 
-INDICATORS:
-RSI:${stock.rsi} | Stoch:${stock.stochK?.toFixed(0)} | CCI:${stock.cci?.toFixed(0)} | MACD:${stock.macdSignal === "BULL" ? "Bullish" : "Bearish"} | ROC:${stock.roc}%
-Cross:${stock.cross} | OBV:${stock.obvTrend} | Vol Ratio:${stock.volRatio}x | Trend:${stock.trend}
+GÖSTERGELER:
+RSI:${stock.rsi} | Stoch:${stock.stochK?.toFixed(0)} | CCI:${stock.cci?.toFixed(0)} | MACD:${stock.macdSignal === "BULL" ? "Boğa" : "Ayı"} | ROC:${stock.roc}%
+Kesişme:${stock.cross} | OBV:${stock.obvTrend} | Hacim Oranı:${stock.volRatio}x | Trend:${stock.trend}
 
-FUNDAMENTALS:
-P/E:${stock.pe || "—"} | EPS:${stock.eps || "—"} | Beta:${stock.beta || "—"} | Mkt Cap:${fmtMcap(stock.mktCap)}
-52W High:$${stock.high52w?.toFixed(2) || "—"} | 52W Low:$${stock.low52w?.toFixed(2) || "—"}
+TEMEL VERİLER:
+F/K:${stock.pe || "—"} | Hisse Başı Kazanç:${stock.eps || "—"} | Beta:${stock.beta || "—"} | Piyasa Değeri:${fmtMcap(stock.mktCap)}
+52H Yüksek:$${stock.high52w?.toFixed(2) || "—"} | 52H Düşük:$${stock.low52w?.toFixed(2) || "—"}
 
-KEY LEVELS:
+KRİTİK SEVİYELER:
 S1=$${stock.s1} S2=$${stock.s2} | R1=$${stock.r1} R2=$${stock.r2}
-Targets: Short: $${stock.targets?.short} / Mid: $${stock.targets?.mid} / Long: $${stock.targets?.long} | Stop Loss:$${stock.targets?.sl}
+Hedefler: Kısa Vade: $${stock.targets?.short} / Orta Vade: $${stock.targets?.mid} / Uzun Vade: $${stock.targets?.long} | Zarar Durdur:$${stock.targets?.sl}
 
-REQUIREMENTS:
-1) Technical outlook summary
-2) Candlestick pattern interpretation
-3) Minervini/Stage status implications
-4) Short, medium, long-term trade strategy
-5) Precise entry/exit points and final verdict`;
+GEREKSİNİMLER:
+1) Teknik görünüm özeti
+2) Mum grafiği formasyonu yorumu
+3) Minervini/Aşama durumu etkileri
+4) Kısa, orta, uzun vadeli işlem stratejisi
+5) Kesin giriş/çıkış noktaları ve nihai karar`;
 
         try {
             const url = "https://api.anthropic.com/v1/messages";
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
             const r = await fetch(proxyUrl, { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": "REPLACE_WITH_REAL_KEY", "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: "claude-3-5-sonnet-20241022", max_tokens: 1000, messages: [{ role: "user", content: p }] }) });
             const d = await r.json();
-            setAiText(d.content?.[0]?.text || "No response generated. Verification required.");
-        } catch { setAiText("⚠️ Neural Relay Offline (Proxy Error). Check console."); }
+            setAiText(d.content?.[0]?.text || "Yanıt oluşturulamadı. Doğrulama gerekiyor.");
+        } catch { setAiText("⚠️ Sinirsel Bağlantı Çevrimdışı (Proxy Hatası). Konsolu kontrol edin."); }
         setLoading(false);
     };
 
@@ -77,7 +77,7 @@ REQUIREMENTS:
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap mb-3">
                             <span className="text-4xl font-display font-black text-white tracking-tighter uppercase">{stock.symbol}</span>
-                            {stock.isPenny && <span className="text-[10px] font-black text-violet-400 bg-violet-400/10 px-3 py-1 rounded-xl border border-violet-400/20 tracking-widest">SPECULATIVE</span>}
+                            {stock.isPenny && <span className="text-[10px] font-black text-violet-400 bg-violet-400/10 px-3 py-1 rounded-xl border border-violet-400/20 tracking-widest">SPEKÜLATİF</span>}
                             <Chip t={stock.rec} />
                         </div>
                         <div className="flex items-center gap-4 flex-wrap">
@@ -92,7 +92,7 @@ REQUIREMENTS:
                     <div className="flex items-start gap-5">
                         <div className="text-center group cursor-help">
                             <Ring score={stock.score} size={72} stroke={5} />
-                            <div className="text-[9px] font-black text-zinc-500 mt-2 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">AI Rating</div>
+                            <div className="text-[9px] font-black text-zinc-500 mt-2 uppercase tracking-[0.2em] group-hover:text-cyan-400 transition-colors">YZ Puanı</div>
                         </div>
                         {isModal && <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center text-zinc-400 text-3xl transition-all shadow-xl">×</button>}
                     </div>
@@ -116,7 +116,7 @@ REQUIREMENTS:
 
                 {/* Visual Price Velocity */}
                 <div className="rounded-[2rem] border border-zinc-800/60 bg-zinc-900/40 p-6 overflow-hidden relative">
-                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-4 opacity-50">Price Momentum (30D)</div>
+                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-4 opacity-50">Fiyat İvmesi (30 Gün)</div>
                     <div className="h-24 w-full flex items-end">
                         <Spark data={stock.sparkline} w={400} h={80} />
                     </div>
@@ -139,7 +139,7 @@ REQUIREMENTS:
 
                 {/* 52-Week Trajectory */}
                 <div className="rounded-[2rem] border border-zinc-800/60 bg-zinc-900/40 p-6">
-                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-5">52-Week Performance Corridor</div>
+                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-5">52 Haftalık Performans Koridoru</div>
                     <div className="relative h-2 bg-zinc-800 rounded-full mb-4 shadow-inner">
                         {stock.high52w && stock.low52w && (
                             <div className="absolute h-full bg-gradient-to-r from-red-500 via-zinc-400 to-emerald-500 rounded-full opacity-60" style={{ left: 0, right: 0 }} />
@@ -168,7 +168,7 @@ REQUIREMENTS:
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {stock.candlePatterns?.length > 0 && (
                         <div className="space-y-4">
-                            <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Price Action Patterns</div>
+                            <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Fiyat Hareketi Formasyonları</div>
                             <div className="grid grid-cols-1 gap-2">
                                 {stock.candlePatterns.map((p, i) => (
                                     <div key={i} className={`flex justify-between items-center px-5 py-3 rounded-2xl border ${p.bull ? "bg-emerald-500/5 border-emerald-500/20" : "bg-red-500/5 border-red-500/20 shadow-sm"}`}>
@@ -177,7 +177,7 @@ REQUIREMENTS:
                                             <span className={`text-[11px] font-black uppercase tracking-wider ${p.bull ? "text-emerald-300" : "text-red-300"}`}>{p.name}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[9px] font-black ${p.bull ? "text-emerald-500" : "text-red-500"}`}>{p.bull ? "BULL" : "BEAR"}</span>
+                                            <span className={`text-[9px] font-black ${p.bull ? "text-emerald-500" : "text-red-500"}`}>{p.bull ? "BOĞA" : "AYI"}</span>
                                             <span className="text-zinc-700 font-black text-[9px]">×{p.strength}</span>
                                         </div>
                                     </div>
@@ -187,7 +187,7 @@ REQUIREMENTS:
                     )}
 
                     <div className="space-y-4">
-                        <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Quantum Signal Matrix</div>
+                        <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Kuantum Sinyal Matrisi</div>
                         <div className="grid grid-cols-2 gap-2">
                             {stock.signals?.map((s, i) => (
                                 <div key={i} className={`flex justify-between items-center px-4 py-3 rounded-2xl border transition-all hover:scale-[1.02] ${s.bull ? "bg-emerald-500/5 border-emerald-500/10" : "bg-red-500/5 border-red-500/10"}`}>
@@ -202,7 +202,7 @@ REQUIREMENTS:
                 {/* Technical Health Table */}
                 <div className="rounded-[2rem] border border-zinc-800/60 bg-zinc-900/40 overflow-hidden shadow-2xl">
                     <div className="px-6 py-4 border-b border-zinc-800/40 bg-zinc-800/20">
-                        <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">Engine Diagnostic Feed</span>
+                        <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">Sistem Teşhis Akışı</span>
                     </div>
                     <div className="divide-y divide-zinc-800/40">
                         {[
@@ -259,27 +259,27 @@ REQUIREMENTS:
 
                 {/* News */}
                 <div className="space-y-4">
-                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Market Sentiment Feed</div>
+                    <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] ml-1">Piyasa Duyarlılık Akışı</div>
                     {!news ? (
                         <button onClick={loadNews} disabled={newsLoading} className={`w-full py-5 rounded-[2rem] text-sm font-black border transition-all ${newsLoading ? "bg-zinc-900 text-zinc-500 border-zinc-800 animate-pulse" : "bg-zinc-800/40 text-zinc-400 border-zinc-800 hover:border-zinc-600 shadow-xl"}`}>
-                            {newsLoading ? "COMMUNICATING WITH FEED..." : "INITIALIZE BLOOMBERG NEWSSTREAM"}
+                            {newsLoading ? "AKIŞLA İLETİŞİM KURULUYOR..." : "BLOOMBERG HABER AKIŞINI BAŞLAT"}
                         </button>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="flex justify-between items-center mb-4 px-1">
-                                <div className="text-[10px] font-black text-zinc-600 uppercase">Latest Dispatches</div>
+                                <div className="text-[10px] font-black text-zinc-600 uppercase">Son Haberler</div>
                                 <span className={`text-[9px] font-black px-3 py-1 rounded-xl border ${news.sentimentScore > 1 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : news.sentimentScore < -1 ? "border-red-500/30 bg-red-500/10 text-red-400" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>
-                                    SENTIMENT: {news.sentiment?.toUpperCase()}
+                                    DUYARLILIK: {news.sentiment?.toUpperCase()}
                                 </span>
                             </div>
-                            {news.news.length === 0 ? <div className="text-center py-12 text-zinc-700 font-bold uppercase tracking-widest text-xs">No active news cycles detected</div> :
+                            {news.news.length === 0 ? <div className="text-center py-12 text-zinc-700 font-bold uppercase tracking-widest text-xs">Aktif haber döngüsü bulunamadı</div> :
                                 <div className="space-y-3">
                                     {news.news.map((n, i) => (
                                         <a key={i} href={n.link} target="_blank" rel="noreferrer" className="block rounded-[1.5rem] border border-zinc-800/60 bg-zinc-900/40 p-4 hover:border-cyan-500/40 transition-all group">
                                             <div className="text-xs font-bold text-zinc-200 group-hover:text-white leading-relaxed mb-2 line-clamp-2">{n.title}</div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-[9px] text-zinc-600 font-black uppercase tracking-wider">{n.publisher}</span>
-                                                <span className="text-[9px] text-zinc-700 font-mono">{n.providerPublishTime ? new Date(n.providerPublishTime * 1000).toLocaleDateString("en-US", { month: 'short', day: 'numeric' }) : ""}</span>
+                                                <span className="text-[9px] text-zinc-700 font-mono">{n.providerPublishTime ? new Date(n.providerPublishTime * 1000).toLocaleDateString("tr-TR", { month: 'short', day: 'numeric' }) : ""}</span>
                                             </div>
                                         </a>
                                     ))}
@@ -291,12 +291,12 @@ REQUIREMENTS:
                 {/* AI Deep Analysis */}
                 <div className="pt-4">
                     <button onClick={analyze} disabled={loading} className={`w-full py-6 rounded-[2.5rem] text-sm font-black border transition-all mb-4 ${loading ? "bg-indigo-950/40 text-indigo-400 border-indigo-900 animate-pulse" : "bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-2xl shadow-indigo-500/20 hover:scale-[1.01] active:scale-[0.99]"}`}>
-                        {loading ? "QUANTUM ANALYTICS SCANNING..." : "RUN CLAUDE-4 NEURAL FORECAST"}
+                        {loading ? "KUANTUM ANALİTİK TARANIYOR..." : "CLAUDE NEURAL TAHMİNİNİ ÇALIŞTIR"}
                     </button>
 
                     {aiText && (
                         <div className="rounded-[2rem] border border-indigo-500/20 bg-indigo-500/5 p-8 text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap shadow-2xl animate-in zoom-in-95 duration-500">
-                            <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mb-4 border-b border-indigo-500/10 pb-4">Neuro-Technical Verdict</div>
+                            <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mb-4 border-b border-indigo-500/10 pb-4">Nöro-Teknik Karar</div>
                             {aiText}
                         </div>
                     )}

@@ -153,7 +153,7 @@ export default function App() {
                             : 0
     );
 
-    const FILTERS = [["ALL", "Market Wide"], ["BUY", "High Conviction"], ["MVN", "Trend Template"], ["VCP", "Contraction"], ["RS80", "Relative Str."], ["CANDLE", "Price Action"], ["OVERSOLD", "Mean Reversion"], ["UPTREND", "Trend Rail"]];
+    const FILTERS = [["ALL", "Tüm Piyasa"], ["BUY", "High Conviction"], ["MVN", "Trend Template"], ["VCP", "Contraction"], ["RS80", "Relative Str."], ["CANDLE", "Price Action"], ["OVERSOLD", "Mean Reversion"], ["UPTREND", "Trend Rail"]];
 
     return (
         <div className={`min-h-screen ${theme.bg} ${theme.text} transition-colors duration-300 font-sans selection:bg-cyan-500/30 overflow-x-hidden`}>
@@ -187,15 +187,15 @@ export default function App() {
 
                     <div className="flex items-center gap-3">
                         <div className="hidden lg:flex items-center gap-1.5 mr-4 bg-zinc-800/20 rounded-2xl p-1 border border-zinc-800/40">
-                            <button onClick={() => { setIsDemo(true); scan(true, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDemo ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Simulation</button>
-                            <button onClick={() => { setIsDemo(false); scan(false, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isDemo ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Live Edge</button>
+                            <button onClick={() => { setIsDemo(true); scan(true, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDemo ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Simülasyon</button>
+                            <button onClick={() => { setIsDemo(false); scan(false, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isDemo ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Canlı Veri</button>
                         </div>
                         <button onClick={toggleTheme} className={`w-11 h-11 flex items-center justify-center rounded-2xl border ${theme.border} ${isDark ? "bg-zinc-900 text-amber-400" : "bg-white text-indigo-600"} hover:scale-105 transition-all shadow-lg`}>
                             {isDark ? "🔆" : "🌙"}
                         </button>
                         {lastUpdated && <div className="hidden sm:flex flex-col items-end mr-1 text-right">
-                            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Last Feed</span>
-                            <span className="text-[11px] font-display font-bold text-zinc-300">{lastUpdated.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Son Güncelleme</span>
+                            <span className="text-[11px] font-display font-bold text-zinc-300">{lastUpdated.toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                         </div>}
                     </div>
                 </div>
@@ -205,7 +205,7 @@ export default function App() {
                     <div className="px-6 pb-3 max-w-screen-2xl mx-auto">
                         <div className="flex justify-between items-end text-[9px] font-bold text-cyan-500/80 uppercase tracking-[0.2em] mb-1.5">
                             <span>{prog.phase}</span>
-                            <span className="text-zinc-500">{prog.done} / {prog.total} PACKETS</span>
+                            <span className="text-zinc-500">{prog.done} / {prog.total} PAKET</span>
                         </div>
                         <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden shadow-inner border border-zinc-900">
                             <div className="h-full bg-gradient-to-r from-cyan-600 via-blue-500 to-cyan-400 rounded-full transition-all duration-500 relative" style={{ width: `${prog.total ? Math.round(prog.done / prog.total * 100) : 0}%` }}>
@@ -234,8 +234,8 @@ export default function App() {
                             <div className="rounded-[2rem] border border-violet-500/30 bg-violet-600/10 p-6 flex items-center gap-5 shadow-2xl backdrop-blur-md">
                                 <div className="w-14 h-14 rounded-2xl bg-violet-500/20 flex items-center justify-center text-3xl">🧩</div>
                                 <div>
-                                    <h4 className="text-base font-display font-bold text-violet-400 uppercase tracking-widest">Micro-Cap High Volatility Zone</h4>
-                                    <p className="text-xs text-zinc-500 font-medium leading-relaxed mt-1">Hedge fund grade tracking for micro-caps. These instruments carry extreme delta risk.</p>
+                                    <h4 className="text-base font-display font-bold text-violet-400 uppercase tracking-widest">Düşük Hacimli Yüksek Volatilite Bölgesi</h4>
+                                    <p className="text-xs text-zinc-500 font-medium leading-relaxed mt-1">Mikro değerli hisseler için hedge fonu düzeyinde takip. Bu enstrümanlar aşırı delta riski taşır.</p>
                                 </div>
                             </div>
                         )}
@@ -247,15 +247,15 @@ export default function App() {
                             <div className="flex-1 flex gap-3">
                                 <div className="relative flex-1 group">
                                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-cyan-500 transition-colors">🔍</span>
-                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Query Bloomberg/Yahoo Feed..." className="w-full bg-zinc-900/40 hover:bg-zinc-900/60 border border-zinc-800/60 rounded-[1.5rem] pl-14 pr-6 py-4 text-sm text-white outline-none focus:border-cyan-500/40 transition-all font-display font-bold placeholder:font-sans placeholder:font-medium placeholder:text-zinc-600 shadow-lg shadow-black/20" />
+                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Bloomberg/Yahoo Verisi Sorgula..." className="w-full bg-zinc-900/40 hover:bg-zinc-900/60 border border-zinc-800/60 rounded-[1.5rem] pl-14 pr-6 py-4 text-sm text-white outline-none focus:border-cyan-500/40 transition-all font-display font-bold placeholder:font-sans placeholder:font-medium placeholder:text-zinc-600 shadow-lg shadow-black/20" />
                                 </div>
                                 <div className="relative">
                                     <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="appearance-none bg-zinc-900/40 hover:bg-zinc-900/60 border border-zinc-800/60 rounded-[1.5rem] px-8 pr-12 py-4 text-xs text-zinc-300 outline-none focus:border-cyan-500/40 transition-all font-black uppercase tracking-[0.15em] shadow-lg shadow-black/20 cursor-pointer">
-                                        <option value="score">Rank: AI IQ</option>
-                                        <option value="change">Rank: Velocity</option>
-                                        <option value="rsi">Rank: RSI Divergence</option>
-                                        <option value="rs">Rank: RS Strength</option>
-                                        <option value="vol">Rank: Liquidity</option>
+                                        <option value="score">Sırala: AI IQ</option>
+                                        <option value="change">Sırala: Velocity</option>
+                                        <option value="rsi">Sırala: RSI Divergence</option>
+                                        <option value="rs">Sırala: RS Strength</option>
+                                        <option value="vol">Sırala: Liquidity</option>
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 text-[10px]">▼</div>
                                 </div>
@@ -275,8 +275,8 @@ export default function App() {
                                     {visible.length === 0 && !scanning && (
                                         <div className="col-span-full py-24 text-center">
                                             <div className="text-4xl mb-4">🔍</div>
-                                            <h3 className="text-xl font-display font-bold text-zinc-300 mb-1">Null Pointer Returned</h3>
-                                            <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Adjust filters or await next data cycle</p>
+                                            <h3 className="text-xl font-display font-bold text-zinc-300 mb-1">Sonuç Bulunamadı</h3>
+                                            <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Filtreleri ayarlayın veya yeni veri döngüsünü bekleyin</p>
                                         </div>
                                     )}
                                     {visible.map(s => <StockCard key={s.symbol} s={s} onSelect={selectStock} onAlarm={s => { setSelected(s); setTab("alarms"); }} onPort={s => { setSelected(s); setTab("portfolio"); }} />)}
@@ -314,7 +314,7 @@ export default function App() {
                                                 ))}
                                             </tbody>
                                         </table>
-                                        {visible.length === 0 && !scanning && <div className="py-32 text-center text-zinc-600 font-bold uppercase tracking-widest italic opacity-40 text-sm">Waiting for incoming market data packets...</div>}
+                                        {visible.length === 0 && !scanning && <div className="py-32 text-center text-zinc-600 font-bold uppercase tracking-widest italic opacity-40 text-sm">Gelen piyasa veri paketleri bekleniyor...</div>}
                                     </div>
                                 </div>
                             </div>
@@ -323,18 +323,18 @@ export default function App() {
                             <div className="hidden xl:block xl:col-span-3 space-y-8">
                                 <div className="rounded-[2.5rem] border border-cyan-500/30 bg-gradient-to-br from-cyan-600/10 to-transparent p-8 shadow-2xl shadow-cyan-500/10">
                                     <h4 className="text-sm font-display font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                                        <span className="text-cyan-400">⚡</span> SYSTEM STATUS
+                                        <span className="text-cyan-400">⚡</span> SİSTEM DURUMU
                                     </h4>
                                     <div className="space-y-6">
-                                        {[["Feed Status", "OPERATIONAL", "text-emerald-500"], ["Latency", "42ms", "text-cyan-400"], ["AI Core", "SONNET-4.2", "text-indigo-400"]].map(([l, v, c]) => (
+                                        {[["Veri Durumu", "ÇALIŞIYOR", "text-emerald-500"], ["Gecikme", "42ms", "text-cyan-400"], ["YZ Çekirdeği", "SONNET-4.2", "text-indigo-400"]].map(([l, v, c]) => (
                                             <div key={l} className="flex justify-between items-center text-xs">
                                                 <span className="text-zinc-500 font-bold uppercase tracking-widest">{l}</span>
                                                 <span className={`${c} font-mono font-bold`}>{v}</span>
                                             </div>
                                         ))}
                                         <div className="pt-4 border-t border-zinc-800/60 mt-4">
-                                            <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 italic">Terminal Information</div>
-                                            <p className="text-[10px] text-zinc-400 leading-relaxed font-medium">Real-time analysis active for {stocks.length} instruments across the NASDAQ high-tech and industrial indices.</p>
+                                            <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 italic">Terminal Bilgisi</div>
+                                            <p className="text-[10px] text-zinc-400 leading-relaxed font-medium">NASDAQ yüksek teknoloji ve sanayi endekslerindeki {stocks.length} enstrüman için gerçek zamanlı analiz aktif.</p>
                                         </div>
                                     </div>
                                 </div>

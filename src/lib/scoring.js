@@ -33,7 +33,7 @@ export function compositeScore(d, sector) {
     return { score: Math.max(0, Math.min(100, totW > 0 ? Math.round(26 + (bullW / totW) * 74) : 50)), signals: sigs };
 }
 
-export const scoreRec = s => s >= 75 ? "STRONG BUY" : s >= 62 ? "BUY" : s >= 45 ? "NEUTRAL" : s >= 32 ? "SELL" : "STRONG SELL";
+export const scoreRec = s => s >= 85 ? "STRONG BUY" : s >= 65 ? "BUY" : s >= 40 ? "NEUTRAL" : s >= 20 ? "SELL" : "STRONG SELL";
 
 export function calcTargets(price, score, atr) {
     const bias = 1 + (score - 50) / 600, a = atr || price * 0.02;

@@ -3,30 +3,30 @@ import { Ring, Chip, MvnBadge, RsBadge, StageBadge, Tooltip } from './atoms';
 export function MinerviniScreen({ stocks, onSelect }) {
     const passed = [...stocks].filter(s => s.minervini?.pass || s.isVCP || (s.rsRating && s.rsRating >= 80)).sort((a, b) => b.score - a.score);
     const stats = [
-        ["📐 Minervini", stocks.filter(s => s.minervini?.pass).length, "text-amber-400", "Mark Minervini's Trend Template requirements for Stage 2 uptrends."],
-        ["🔥 VCP", stocks.filter(s => s.isVCP).length, "text-orange-400", "Volatility Contraction Pattern - A precursor to explosive breakouts."],
-        ["⭐ RS≥80", stocks.filter(s => s.rsRating >= 80).length, "text-emerald-400", "Superior Relative Strength - Outperforming 80% of the market."],
+        ["📐 Minervini", stocks.filter(s => s.minervini?.pass).length, "text-amber-400", "Aşama 2 yükseliş trendleri için Mark Minervini'nin Trend Şablonu gereksinimleri."],
+        ["🔥 VCP", stocks.filter(s => s.isVCP).length, "text-orange-400", "Volatilite Daralma Patenti (VCP) - Patlayıcı kırılmaların habercisi."],
+        ["⭐ RS≥80", stocks.filter(s => s.rsRating >= 80).length, "text-emerald-400", "Üstün Göreceli Güç - Piyasanın %80'inden daha iyi performans."],
     ];
     const headers = [
-        { l: "Asset", d: "The ticker symbol and sector of the security." },
-        { l: "Current Price", d: "Current market price in USD." },
-        { l: "AI Score", d: "Aggregated technical strength score from 0-100." },
-        { l: "Minervini Criteria", d: "Criteria passed out of 8 based on Mark Minervini's Trend Template." },
-        { l: "Technical Stage", d: "Stan Weinstein's stage analysis (Stage 2 is ideal for buying)." },
-        { l: "RS Rating", d: "Relative Strength rating compared to the rest of the market." },
-        { l: "VCP Status", d: "Identifies if the stock is forming a Volatility Contraction Pattern." },
-        { l: "Verdict", d: "AI's final recommendation based on all combined metrics." }
+        { l: "Varlık", d: "Menkul kıymetin sembolü ve sektörü." },
+        { l: "Güncel Fiyat", d: "USD cinsinden mevcut piyasa fiyatı." },
+        { l: "YZ Puanı", d: "0-100 arası birleşik teknik güç puanı." },
+        { l: "Minervini Kriteri", d: "Mark Minervini'nin Trend Şablonuna göre 8 üzerinden geçilen kriter sayısı." },
+        { l: "Teknik Aşama", d: "Stan Weinstein'ın aşama analizi (Aşama 2 satın alma için idealdir)." },
+        { l: "RS Puanı", d: "Piyasanın geri kalanıyla karşılaştırıldığında Göreceli Güç puanı." },
+        { l: "VCP Durumu", d: "Hissenin bir Volatilite Daralma Patenti oluşturup oluşturmadığını belirler." },
+        { l: "Karar", d: "Tüm birleşik metriklere dayalı yapay zekanın nihai tavsiyesi." }
     ];
 
     return (
         <div className="space-y-8">
             <div className="bg-gradient-to-br from-amber-600/10 to-orange-600/10 border border-amber-500/20 rounded-[2.5rem] p-8 mb-4 relative overflow-hidden group">
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-display font-black text-amber-500 mb-3 tracking-tight uppercase">MARK MINERVINI PROTOCOL</h2>
+                    <h2 className="text-2xl font-display font-black text-amber-500 mb-3 tracking-tight uppercase">MARK MINERVINI PROTOKOLÜ</h2>
                     <p className="text-sm text-zinc-400 leading-relaxed max-w-3xl font-medium">
-                        This screen filters assets based on the <span className="text-zinc-200 font-bold underline decoration-amber-500/50">Mark Minervini Trend Template</span>.
-                        It identifies stocks in <span className="text-zinc-200 font-bold">Stage 2 uptrends</span> with high relative strength and tightening volatility.
-                        The goal is to capture high-velocity growth moves by entering stocks with confirmed momentum and low-risk entry points.
+                        bu ekran varlıkları <span className="text-zinc-200 font-bold underline decoration-amber-500/50">Mark Minervini Trend Şablonuna</span> göre filtreler.
+                        Yüksek göreceli güce ve daralan volatiliteye sahip <span className="text-zinc-200 font-bold">Aşama 2 yükseliş trendindeki</span> hisseleri belirler.
+                        Amaç, teyit edilmiş ivme ve düşük riskli giriş noktalarıyla yüksek hızlı büyüme hareketlerini yakalamaktır.
                     </p>
                 </div>
                 <div className="absolute -right-4 -bottom-4 text-[120px] opacity-5 select-none pointer-events-none grayscale">📐</div>
@@ -57,24 +57,24 @@ export function MinerviniScreen({ stocks, onSelect }) {
                             </div>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="bg-zinc-800/40 rounded-2xl p-3 border border-zinc-800/30">
-                                    <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Price</div>
+                                    <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Fiyat</div>
                                     <div className="font-display font-bold text-white text-lg">${s.price}</div>
                                 </div>
                                 <div className="bg-zinc-800/40 rounded-2xl p-3 border border-zinc-800/30">
-                                    <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Vol Ratio</div>
+                                    <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Hacim Oranı</div>
                                     <div className="font-display font-bold text-white text-lg">{s.volRatio}x</div>
                                 </div>
                             </div>
                             <div className="flex justify-between items-center pt-4 border-t border-zinc-800/40">
                                 <Chip t={s.rec} />
                                 <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700/50">
-                                    <span className="text-[10px] font-bold text-zinc-400">STAGE</span>
+                                    <span className="text-[10px] font-bold text-zinc-400">AŞAMA</span>
                                     <span className="text-[10px] font-bold text-white">{s.stage?.label.split(" — ")[1] || s.stage?.label}</span>
                                 </div>
                             </div>
                         </div>
                     ))}
-                    {!passed.length && <div className="text-center text-zinc-600 py-16 font-medium">No assets currently meet the Trend Template requirements.</div>}
+                    {!passed.length && <div className="text-center text-zinc-600 py-16 font-medium">Şu anda Trend Şablonu gereksinimlerini karşılayan bir varlık yok.</div>}
                 </div>
 
                 {/* Desktop */}
@@ -105,7 +105,7 @@ export function MinerviniScreen({ stocks, onSelect }) {
                                     <td className="px-6 py-6"><RsBadge rs={s.rsRating} /></td>
                                     <td className="px-6 py-6">
                                         <div className={`text-[10px] font-black px-3 py-1.5 rounded-xl border-2 transition-all ${s.isVCP ? "bg-orange-600/10 border-orange-500/40 text-orange-400 shadow-[0_0_15px_-5px_rgba(249,115,22,0.4)]" : "bg-zinc-800/40 border-zinc-800 text-zinc-600 font-bold"}`}>
-                                            {s.isVCP ? "DETECTED 🔥" : "NONE"}
+                                            {s.isVCP ? "TESPİT EDİLDİ 🔥" : "YOK"}
                                         </div>
                                     </td>
                                     <td className="px-6 py-6 font-bold"><Chip t={s.rec} sm /></td>
@@ -113,7 +113,7 @@ export function MinerviniScreen({ stocks, onSelect }) {
                             ))}
                         </tbody>
                     </table>
-                    {!passed.length && <div className="text-center text-zinc-600 py-24 font-bold uppercase tracking-widest text-sm opacity-50">No assets currently meet the Mark Minervini Trend Template requirements.</div>}
+                    {!passed.length && <div className="text-center text-zinc-600 py-24 font-bold uppercase tracking-widest text-sm opacity-50">Şu anda Mark Minervini Trend Şablonu gereksinimlerini karşılayan varlık bulunamadı.</div>}
                 </div>
             </div>
         </div>

@@ -10,9 +10,9 @@ export const TABS = [
 ];
 
 export const REC_CLS = {
-    "STRONG BUY": "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]",
-    "BUY": "bg-emerald-500/5 text-emerald-500 border-emerald-500/20",
-    "NEUTRAL": "bg-amber-500/5 text-amber-500 border-amber-500/20",
-    "SELL": "bg-red-500/5 text-red-500 border-red-500/20",
-    "STRONG SELL": "bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_0_15px_-5px_rgba(239,68,68,0.3)]",
+    "STRONG BUY": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/5",
+    "BUY": "text-cyan-400 bg-cyan-500/10 border-cyan-500/20 shadow-cyan-500/5",
+    "NEUTRAL": "text-zinc-500 bg-zinc-800/40 border-zinc-700/50",
+    "SELL": "text-orange-400 bg-orange-500/10 border-orange-500/20 shadow-orange-500/5",
+    "STRONG SELL": "text-red-400 bg-red-500/10 border-red-500/20 shadow-red-500/5",
 };
