@@ -13,15 +13,45 @@ const YF_PROXIES = [
     "https://corsproxy.io/?url="
 ];
 
-export async function yfFetch(url) {
+function createTimeoutSignal(timeoutMs, externalSignal) {
+    if (externalSignal?.aborted) {
+        return externalSignal;
+    }
+
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), timeoutMs);
+    const abortFromExternal = () => ctrl.abort();
+
+    if (externalSignal) {
+        externalSignal.addEventListener("abort", abortFromExternal, { once: true });
+    }
+
+    return {
+        signal: ctrl.signal,
+        cleanup: () => {
+            clearTimeout(timeoutId);
+            if (externalSignal) {
+                externalSignal.removeEventListener("abort", abortFromExternal);
+            }
+        },
+    };
+}
+
+export async function yfFetch(url, options = {}) {
+    const { signal: externalSignal } = options;
+
     try {
-        const r = await fetch(url, { headers: { "Accept": "application/json" }, signal: AbortSignal.timeout(3000) });
+        const mainReq = createTimeoutSignal(3000, externalSignal);
+        const r = await fetch(url, { headers: { "Accept": "application/json" }, signal: mainReq.signal || mainReq })
+            .finally(() => mainReq.cleanup?.());
         if (r.ok) return r.json();
     } catch { }
 
     try {
         const promises = YF_PROXIES.map(async (proxy) => {
-            const r = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+            const proxyReq = createTimeoutSignal(8000, externalSignal);
+            const r = await fetch(proxy + encodeURIComponent(url), { signal: proxyReq.signal || proxyReq })
+                .finally(() => proxyReq.cleanup?.());
             if (r.ok) return r.json();
             throw new Error(`Proxy failed: ${proxy}`);
         });
@@ -32,21 +62,21 @@ export async function yfFetch(url) {
     }
 }
 
-export async function fetchHistory(sym) {
-    const d = await yfFetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`);
+export async function fetchHistory(sym, options = {}) {
+    const d = await yfFetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`, options);
     if (!d?.chart?.result?.[0]) return null;
     const r = d.chart.result[0], { close, open, high, low, volume } = r.indicators.quote[0];
     return r.timestamp.map((_, i) => ({ c: close[i], o: open[i], h: high[i], l: low[i], v: volume[i] })).filter(x => x.c != null && x.h != null && x.o != null);
 }
 
-export async function fetchBatchQuotes(syms) {
+export async function fetchBatchQuotes(syms, options = {}) {
     const fields = "regularMarketPrice,regularMarketChangePercent,regularMarketVolume,averageDailyVolume3Month,regularMarketPreviousClose,trailingPE,epsTrailingTwelveMonths,marketCap,beta,fiftyTwoWeekHigh,fiftyTwoWeekLow,displayName,shortName";
-    const d = await yfFetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(",")}&fields=${fields}`);
+    const d = await yfFetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(",")}&fields=${fields}`, options);
     return d?.quoteResponse?.result || [];
 }
 
-export async function fetchNews(sym) {
-    const d = await yfFetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${sym}&newsCount=5&enableFuzzyQuery=false`);
+export async function fetchNews(sym, options = {}) {
+    const d = await yfFetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${sym}&newsCount=5&enableFuzzyQuery=false`, options);
     const news = d?.news?.slice(0, 5) || [];
     if (!news.length) return { news: [], sentiment: "NEUTRAL", sentimentScore: 0 };
 
@@ -65,9 +95,9 @@ export async function fetchNews(sym) {
     return { news, sentiment, sentimentScore: score };
 }
 
-export async function buildStock(symbol, qd, spyCloses = []) {
+export async function buildStock(symbol, qd, spyCloses = [], options = {}) {
     try {
-        const hist = await fetchHistory(symbol);
+        const hist = await fetchHistory(symbol, options);
         if (!hist || hist.length < 3) return null;
 
         const c = hist.map(d => d.c), o = hist.map(d => d.o), h = hist.map(d => d.h);
