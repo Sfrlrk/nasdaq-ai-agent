@@ -1,0 +1,2 @@
+# Reduce recurring PR conflicts on planning docs that are append/update heavy.
+docs/PRODUCT_BOARD.md merge=union
