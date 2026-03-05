@@ -44,6 +44,8 @@ export default function App() {
     const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
     const [isDark, setIsDark] = useState(true);
     const spyClosesRef = useRef([]);
+    const scanAbortRef = useRef(null);
+    const lastScanArgsRef = useRef({ demo: false, penny: false, forceClear: false });
 
     useEffect(() => { const saved = localStorage.getItem("nasdaq_theme"); if (saved) setIsDark(saved === "dark"); }, []);
 
@@ -96,6 +98,9 @@ export default function App() {
 
     const scan = useCallback(async (demo = false, penny = false, forceClear = false) => {
         if (scanningRef.current) return;
+        lastScanArgsRef.current = { demo, penny, forceClear };
+        const abortCtrl = new AbortController();
+        scanAbortRef.current = abortCtrl;
         scanningRef.current = true;
         setScanning(true);
         if (forceClear || demo) {
@@ -116,12 +121,13 @@ export default function App() {
             }
 
             setProg(p => ({ ...p, phase: "SPY Endeksi Hesaplanıyor..." }));
-            const spyHist = await fetchHistory("SPY");
+            const spyHist = await fetchHistory("SPY", { signal: abortCtrl.signal });
             if (spyHist) spyClosesRef.current = spyHist.map(d => d.c);
 
             const qm = {};
             for (let i = 0; i < syms.length; i += 20) {
-                try { const qs = await fetchBatchQuotes(syms.slice(i, i + 20)); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
+                if (abortCtrl.signal.aborted || !scanningRef.current) break;
+                try { const qs = await fetchBatchQuotes(syms.slice(i, i + 20), { signal: abortCtrl.signal }); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
                 await new Promise(r => setTimeout(r, 1000));
             }
 
@@ -137,7 +143,7 @@ export default function App() {
                 setProg({ done: Math.min(idx + 1, syms.length), total: syms.length, phase: `Sorgulanıyor: ${sym}...` });
 
                 try {
-                    const s = await buildStock(sym, qm[sym], spyClosesRef.current);
+                    const s = await buildStock(sym, qm[sym], spyClosesRef.current, { signal: abortCtrl.signal });
                     if (s && scanningRef.current) {
                         results.push(s);
                         setStocks(prev => {
@@ -164,10 +170,15 @@ export default function App() {
             setStocks(results);
             setLastUpdated(new Date());
         } catch (e) {
-            console.error("Tarama Hatası:", e);
+            if (e?.name !== "AbortError") {
+                console.error("Tarama Hatası:", e);
+            }
         } finally {
             setScanning(false);
             scanningRef.current = false;
+            if (scanAbortRef.current === abortCtrl) {
+                scanAbortRef.current = null;
+            }
         }
     }, []);
 
@@ -195,6 +206,19 @@ export default function App() {
     }, [scan, pennyOn]);
     // Remove the extra scanning loop attached to pennyOn that was overriding the init.
     // Instead we will rely on a dedicated toggle function.
+
+    const cancelScan = useCallback(() => {
+        if (!scanningRef.current) return;
+        scanningRef.current = false;
+        scanAbortRef.current?.abort();
+        setProg(p => ({ ...p, phase: "Tarama iptal edildi" }));
+    }, []);
+
+    const retryLastScan = useCallback(() => {
+        const { demo, penny, forceClear } = lastScanArgsRef.current;
+        scan(demo, penny, true);
+    }, [scan]);
+
     const togglePenny = () => {
         const next = !pennyOn;
         setPennyOn(next);
@@ -266,6 +290,7 @@ export default function App() {
                             <button onClick={() => { setIsDemo(true); scan(true, pennyOn, true); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDemo ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Simülasyon</button>
                             <button onClick={() => { setIsDemo(false); scan(false, pennyOn, true); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isDemo ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Canlı Veri</button>
                         </div>
+                        <button onClick={retryLastScan} disabled={scanning} className={`px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${scanning ? "border-zinc-700 text-zinc-600 cursor-not-allowed" : "border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"}`}>Yeniden Dene</button>
                         <button onClick={toggleTheme} className={`w-11 h-11 flex items-center justify-center rounded-2xl border ${theme.border} ${isDark ? "bg-zinc-900 text-amber-400" : "bg-white text-indigo-600"} hover:scale-105 transition-all shadow-lg`}>
                             {isDark ? "🔆" : "🌙"}
                         </button>
@@ -281,7 +306,10 @@ export default function App() {
                     <div className="px-6 pb-3 max-w-screen-2xl mx-auto">
                         <div className="flex justify-between items-end text-[9px] font-bold text-cyan-500/80 uppercase tracking-[0.2em] mb-1.5">
                             <span>{prog.phase}</span>
-                            <span className="text-zinc-500">{prog.done} / {prog.total} PAKET</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-zinc-500">{prog.done} / {prog.total} PAKET</span>
+                                <button onClick={cancelScan} className="px-2.5 py-1 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all">İptal</button>
+                            </div>
                         </div>
                         <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden shadow-inner border border-zinc-900">
                             <div className="h-full bg-gradient-to-r from-cyan-600 via-blue-500 to-cyan-400 rounded-full transition-all duration-500 relative" style={{ width: `${prog.total ? Math.round(prog.done / prog.total * 100) : 0}%` }}>

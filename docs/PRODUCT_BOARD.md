@@ -35,9 +35,9 @@
 | T-002 | ESLint + Prettier + import/order standardı | Orta | S | Backlog | T-001 | Kod kalitesi standardize |
 | T-003 | Vitest + React Testing Library kurulumu | Yüksek | M | Done | T-002 | Temel test altyapısı |
 | T-004 | `scoring`, `analysis`, `indicators` için unit test paketi | Çok Yüksek | M | Done | T-003 | Finansal hesaplama güvenilirliği |
-| T-005 | GitHub Actions: build + test + lint | Yüksek | S | Backlog | T-003 | CI kalite kapısı |
+| T-005 | GitHub Actions: build + test + lint | Yüksek | S | Done | T-003 | CI kalite kapısı |
 | T-006 | API katmanında retry/backoff + concurrency (Pool bazlı proxy) | Yüksek | M | Done | - | Rate limit dayanıklılığı |
-| T-007 | Tarama iptal/yeniden deneme mekanizması (AbortController) | Orta | M | Backlog | T-006 | UX iyileşir |
+| T-007 | Tarama iptal/yeniden deneme mekanizması (AbortController) | Orta | M | Done | T-006 | UX iyileşir |
 | T-008 | Sonuç listesinde sanallaştırma (`react-window`) | Orta | M | Backlog | - | Büyük listede performans |
 | T-009 | Portföy P/L dashboard (günlük, haftalık, aylık) | Yüksek | M | Backlog | - | Ürün değeri artar |
 | T-010 | Alarm motoruna gelişmiş koşullar (cross, RSI zone, volume spike) | Yüksek | M | Backlog | - | Daha güçlü otomasyon |
