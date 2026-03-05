@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchNews } from '../lib/api';
 import { Chip, Ring, Spark, SecDot, RsBadge, StageBadge, MvnBadge, CandleBadge, fmtMcap } from './atoms';
+import { ScoreExplain } from './ScoreExplain';
 
 export function StockDetail({ stock, onClose, isModal }) {
     const [aiText, setAiText] = useState("");
@@ -113,6 +114,8 @@ GEREKSİNİMLER:
                     <MvnBadge mvn={stock.minervini} />
                     {stock.candlePatterns?.length > 0 && <CandleBadge patterns={[...stock.candlePatterns]} />}
                 </div>
+
+                <ScoreExplain signals={stock.signals} />
 
                 {/* Visual Price Velocity */}
                 <div className="rounded-[2rem] border border-zinc-800/60 bg-zinc-900/40 p-6 overflow-hidden relative">

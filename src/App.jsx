@@ -112,15 +112,38 @@ export default function App() {
         }
 
         const results = [];
+        const runId = `scan_${Date.now()}`;
         for (let i = 0; i < syms.length; i++) {
             setProg({ done: i + 1, total: syms.length, phase: `Feeding: ${syms[i]}...` });
             const s = await buildStock(syms[i], qm[syms[i]], spyClosesRef.current);
-            if (s) { results.push(s); setStocks([...results]); }
+            if (s) {
+                results.push(s);
+                setStocks([...results]);
+
+                // Başarılı her sonucu anlık geçmişe kaydet (tüm taramanın bitmesini bekleme)
+                storage.saveLiveResult(s, runId).catch(() => { });
+
+                // Özet geçmişi de parça parça güncelle
+                if (results.length % 5 === 0) storage.saveSnapshot(results).catch(() => { });
+            }
             if (i < syms.length - 1) await new Promise(r => setTimeout(r, 800));
         }
-        await storage.saveSnapshot(results);
+
+        let finalResults = results;
+        if (results.length === 0) {
+            const fallback = syms.map(s => mockStock(s));
+            setStocks(fallback);
+            finalResults = fallback;
+            showToast({
+                type: "warn",
+                title: "Network erişimi engellendi",
+                msg: "Canlı veri alınamadı. Demo veriler gösteriliyor (proxy/CORS engeli olabilir)."
+            });
+        }
+
+        await storage.saveSnapshot(finalResults);
         setLastUpdated(new Date()); setScanning(false);
-    }, []);
+    }, [showToast]);
 
     useEffect(() => { scan(true, false); }, []);
     useEffect(() => { if (!scanning) scan(isDemo, pennyOn); }, [pennyOn]);

@@ -1,10 +1,9 @@
-import { get, set, del } from 'idb-keyval';
+import { get, set } from 'idb-keyval';
 
 // Storage helper with localStorage fallback
 export const storage = {
     get: async (key) => {
         try {
-            // Try idb-keyval first
             const idbResult = await get(key);
             if (idbResult !== undefined) return idbResult;
 
@@ -18,6 +17,7 @@ export const storage = {
         const v = localStorage.getItem(key);
         return v ? { value: v } : null;
     },
+
     set: async (key, val) => {
         try {
             if (window.storage?.set) {
@@ -29,6 +29,7 @@ export const storage = {
         }
         localStorage.setItem(key, val);
     },
+
     saveSnapshot: async (data) => {
         try {
             const hStr = localStorage.getItem('analysis_history') || '[]';
@@ -40,15 +41,46 @@ export const storage = {
                     bullish: data.filter(s => s.rec === "BUY").length,
                     bearish: data.filter(s => s.rec === "SELL").length,
                     mvn: data.filter(s => s.minervini?.pass).length,
-                    top: data.sort((a, b) => b.score - a.score).slice(0, 3).map(s => s.symbol)
+                    top: [...data].sort((a, b) => b.score - a.score).slice(0, 3).map(s => s.symbol)
                 }
             };
             history.push(snapshot);
             if (history.length > 50) history.shift();
             localStorage.setItem('analysis_history', JSON.stringify(history));
             return snapshot;
-        } catch (e) { console.error("Snapshot error:", e); return null; }
+        } catch (e) {
+            console.error("Snapshot error:", e);
+            return null;
+        }
     },
+
+    saveLiveResult: async (stock, runId) => {
+        try {
+            const key = 'scan_result_history_v1';
+            const hStr = localStorage.getItem(key) || '[]';
+            const history = JSON.parse(hStr);
+
+            history.push({
+                runId,
+                at: new Date().toISOString(),
+                symbol: stock.symbol,
+                score: stock.score,
+                rec: stock.rec,
+                price: stock.price,
+                change: stock.change,
+                rsRating: stock.rsRating,
+                sector: stock.sector,
+            });
+
+            if (history.length > 2000) history.splice(0, history.length - 2000);
+            localStorage.setItem(key, JSON.stringify(history));
+            return true;
+        } catch (e) {
+            console.error("saveLiveResult error:", e);
+            return false;
+        }
+    },
+
     getReport: async () => {
         try {
             const hStr = localStorage.getItem('analysis_history') || '[]';
@@ -65,6 +97,8 @@ export const storage = {
             }
             report += `\nINSTRUCTION: Refine algorithms for ${latest.stats.top[0]}.`;
             return report;
-        } catch (e) { return "Error generating report."; }
+        } catch (e) {
+            return "Error generating report.";
+        }
     }
 };

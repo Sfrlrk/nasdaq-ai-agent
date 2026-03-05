@@ -13,16 +13,66 @@ const YF_PROXIES = [
     "https://corsproxy.io/?url="
 ];
 
-export async function yfFetch(url) {
-    try {
-        const r = await fetch(url, { headers: { "Accept": "application/json" }, signal: AbortSignal.timeout(5000) });
-        if (r.ok) return r.json();
-    } catch { }
+const CACHE_TTL_MS = {
+    history: 3 * 60 * 1000,
+    quote: 45 * 1000,
+    news: 2 * 60 * 1000,
+};
+
+const yfCache = new Map();
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getCached(url, ttlMs) {
+    const cached = yfCache.get(url);
+    if (!cached) return null;
+    if (Date.now() - cached.at > ttlMs) {
+        yfCache.delete(url);
+        return null;
+    }
+    return cached.data;
+}
+
+function setCached(url, data) {
+    yfCache.set(url, { at: Date.now(), data });
+}
+
+async function fetchWithRetry(url, opts = {}, retries = 2, timeoutMs = 5000) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(url, { ...opts, signal: AbortSignal.timeout(timeoutMs) });
+            if (response.ok) return response;
+        } catch { }
+        if (attempt < retries) await sleep(300 * (attempt + 1));
+    }
+    return null;
+}
+
+export async function yfFetch(url, { cacheTtlMs = 0 } = {}) {
+    if (cacheTtlMs > 0) {
+        const cached = getCached(url, cacheTtlMs);
+        if (cached) return cached;
+    }
+
+    const direct = await fetchWithRetry(url, {
+        headers: { "Accept": "application/json" },
+    }, 2, 5000);
+    if (direct) {
+        const data = await direct.json();
+        if (cacheTtlMs > 0) setCached(url, data);
+        return data;
+    }
 
     for (const proxy of YF_PROXIES) {
         try {
-            const r = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
-            if (r.ok) return r.json();
+            const r = await fetchWithRetry(proxy + encodeURIComponent(url), {}, 1, 10000);
+            if (r) {
+                const data = await r.json();
+                if (cacheTtlMs > 0) setCached(url, data);
+                return data;
+            }
         } catch (e) {
             console.warn(`Proxy failed: ${proxy}`, e.message);
         }
@@ -31,7 +81,7 @@ export async function yfFetch(url) {
 }
 
 export async function fetchHistory(sym) {
-    const d = await yfFetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`);
+    const d = await yfFetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=6mo`, { cacheTtlMs: CACHE_TTL_MS.history });
     if (!d?.chart?.result?.[0]) return null;
     const r = d.chart.result[0], { close, open, high, low, volume } = r.indicators.quote[0];
     return r.timestamp.map((_, i) => ({ c: close[i], o: open[i], h: high[i], l: low[i], v: volume[i] })).filter(x => x.c != null && x.h != null && x.o != null);
@@ -39,12 +89,12 @@ export async function fetchHistory(sym) {
 
 export async function fetchBatchQuotes(syms) {
     const fields = "regularMarketPrice,regularMarketChangePercent,regularMarketVolume,averageDailyVolume3Month,regularMarketPreviousClose,trailingPE,epsTrailingTwelveMonths,marketCap,beta,fiftyTwoWeekHigh,fiftyTwoWeekLow,displayName,shortName";
-    const d = await yfFetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(",")}&fields=${fields}`);
+    const d = await yfFetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(",")}&fields=${fields}`, { cacheTtlMs: CACHE_TTL_MS.quote });
     return d?.quoteResponse?.result || [];
 }
 
 export async function fetchNews(sym) {
-    const d = await yfFetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${sym}&newsCount=5&enableFuzzyQuery=false`);
+    const d = await yfFetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${sym}&newsCount=5&enableFuzzyQuery=false`, { cacheTtlMs: CACHE_TTL_MS.news });
     const news = d?.news?.slice(0, 5) || [];
     if (!news.length) return { news: [], sentiment: "NEUTRAL", sentimentScore: 0 };
 
