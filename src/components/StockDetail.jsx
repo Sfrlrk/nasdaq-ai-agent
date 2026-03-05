@@ -114,6 +114,47 @@ GEREKSİNİMLER:
                     {stock.candlePatterns?.length > 0 && <CandleBadge patterns={[...stock.candlePatterns]} />}
                 </div>
 
+                {/* AI Score X-Ray Panel (T-011) */}
+                <div className="rounded-[2rem] border border-cyan-500/20 bg-cyan-500/5 p-6 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <div className="flex justify-between items-center mb-5 relative z-10">
+                        <div className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                            <span>🔍</span> Skor X-Ray (Açıklanabilirlik)
+                        </div>
+                        <div className="text-[9px] text-zinc-500 font-black font-mono border border-zinc-700/50 bg-zinc-800/40 px-2 py-1 rounded-md">
+                            SCORE ≈ 26 + (BOĞA GÜCÜ / TOPLAM GÜÇ) × 74
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                        <div className="rounded-[1.25rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
+                            <div className="text-[9px] text-emerald-400 font-black uppercase tracking-widest mb-3 border-b border-emerald-500/20 pb-2">Baskın Boğa Faktörleri (Pozitif)</div>
+                            <div className="space-y-2">
+                                {stock.signals?.filter(s => s.bull).sort((a, b) => b.w - a.w).slice(0, 4).map(s => (
+                                    <div key={s.name} className="flex justify-between items-center text-[10px] font-black">
+                                        <span className="text-emerald-200">{s.name}</span>
+                                        <span className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">+{s.w} Ağırlık</span>
+                                    </div>
+                                ))}
+                                {(!stock.signals || stock.signals.filter(s => s.bull).length === 0) && <div className="text-[10px] text-emerald-700 font-bold italic">Boğa faktörü bulunmuyor</div>}
+                            </div>
+                        </div>
+
+                        <div className="rounded-[1.25rem] border border-red-500/20 bg-red-500/10 p-4">
+                            <div className="text-[9px] text-red-400 font-black uppercase tracking-widest mb-3 border-b border-red-500/20 pb-2">Baskın Ayı Faktörleri (Negatif)</div>
+                            <div className="space-y-2">
+                                {stock.signals?.filter(s => !s.bull).sort((a, b) => b.w - a.w).slice(0, 4).map(s => (
+                                    <div key={s.name} className="flex justify-between items-center text-[10px] font-black">
+                                        <span className="text-red-200">{s.name}</span>
+                                        <span className="text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">-{s.w} Ağırlık</span>
+                                    </div>
+                                ))}
+                                {(!stock.signals || stock.signals.filter(s => !s.bull).length === 0) && <div className="text-[10px] text-red-700 font-bold italic">Ayı faktörü bulunmuyor</div>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Visual Price Velocity */}
                 <div className="rounded-[2rem] border border-zinc-800/60 bg-zinc-900/40 p-6 overflow-hidden relative">
                     <div className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-4 opacity-50">Fiyat İvmesi (30 Gün)</div>

@@ -66,5 +66,31 @@ export const storage = {
             report += `\nINSTRUCTION: Refine algorithms for ${latest.stats.top[0]}.`;
             return report;
         } catch (e) { return "Error generating report."; }
+    },
+    saveFullData: async (data, isDemo = false) => {
+        try {
+            const entry = { at: Date.now(), data, isDemo };
+            await set('nasdaq_full_data', entry);
+
+            const hist = await get('nasdaq_full_data_history') || [];
+            hist.push(entry);
+            if (hist.length > 5) hist.shift(); // Keep last 5 to not blow up indexeddb quota limit
+            await set('nasdaq_full_data_history', hist);
+        } catch (e) { console.error("Error saving full data:", e); }
+    },
+    getFullData: async () => {
+        try {
+            return await get('nasdaq_full_data');
+        } catch (e) { console.error("Error getting full data:", e); return null; }
+    },
+    getFullDataHistory: async () => {
+        try {
+            return await get('nasdaq_full_data_history') || [];
+        } catch (e) { return []; }
+    },
+    setHistory: async (hist) => {
+        try {
+            await set('nasdaq_full_data_history', hist);
+        } catch (e) { }
     }
 };

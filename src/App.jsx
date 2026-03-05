@@ -20,6 +20,7 @@ import { Portfolio } from "./components/Portfolio";
 import { Alarms } from "./components/Alarms";
 import { SigAnalysis } from "./components/SigAnalysis";
 import { Settings } from "./components/Settings";
+import { HistoryTab } from "./components/HistoryTab";
 
 // ═══════════════════════════════════════════════════════════════
 // CORE APPLICATION
@@ -35,7 +36,7 @@ export default function App() {
     const [sortBy, setSortBy] = useState("score");
     const [filter, setFilter] = useState("ALL");
     const [search, setSearch] = useState("");
-    const [isDemo, setIsDemo] = useState(true);
+    const [isDemo, setIsDemo] = useState(false);
     const [pennyOn, setPennyOn] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [toast, setToast] = useState(null);
@@ -90,40 +91,115 @@ export default function App() {
         check(); const id = setInterval(check, 5 * 60 * 1000); return () => clearInterval(id);
     }, [tg, stocks, lastReport]);
 
-    const scan = useCallback(async (demo = false, penny = false) => {
-        setScanning(true); setStocks([]);
-        const syms = [...new Set([...Object.values(SECTORS).flatMap(s => s.syms), ...(penny ? PENNY_SYMS : [])])];
-        setProg({ done: 0, total: syms.length, phase: "Initializing system..." });
+    const scanningRef = useRef(false);
+    const isInitRef = useRef(false);
 
-        if (demo) {
-            setStocks(syms.map(s => mockStock(s)));
-            setProg({ done: syms.length, total: syms.length, phase: "Demo environment loaded" });
-            setLastUpdated(new Date()); setScanning(false); return;
+    const scan = useCallback(async (demo = false, penny = false, forceClear = false) => {
+        if (scanningRef.current) return;
+        scanningRef.current = true;
+        setScanning(true);
+        if (forceClear || demo) {
+            setStocks([]);
         }
 
-        setProg(p => ({ ...p, phase: "Calculating SPY benchmark..." }));
-        const spyHist = await fetchHistory("SPY");
-        if (spyHist) spyClosesRef.current = spyHist.map(d => d.c);
+        try {
+            const syms = [...new Set([...Object.values(SECTORS).flatMap(s => s.syms), ...(penny ? PENNY_SYMS : [])])];
+            setProg({ done: 0, total: syms.length, phase: "Sistem Başlatılıyor..." });
 
-        const qm = {};
-        for (let i = 0; i < syms.length; i += 20) {
-            try { const qs = await fetchBatchQuotes(syms.slice(i, i + 20)); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
-            await new Promise(r => setTimeout(r, 1000));
-        }
+            if (demo) {
+                setStocks(syms.map(s => mockStock(s)));
+                setProg({ done: syms.length, total: syms.length, phase: "Demo veritabanı yüklendi" });
+                setLastUpdated(new Date());
+                setScanning(false);
+                scanningRef.current = false;
+                return;
+            }
 
-        const results = [];
-        for (let i = 0; i < syms.length; i++) {
-            setProg({ done: i + 1, total: syms.length, phase: `Feeding: ${syms[i]}...` });
-            const s = await buildStock(syms[i], qm[syms[i]], spyClosesRef.current);
-            if (s) { results.push(s); setStocks([...results]); }
-            if (i < syms.length - 1) await new Promise(r => setTimeout(r, 800));
+            setProg(p => ({ ...p, phase: "SPY Endeksi Hesaplanıyor..." }));
+            const spyHist = await fetchHistory("SPY");
+            if (spyHist) spyClosesRef.current = spyHist.map(d => d.c);
+
+            const qm = {};
+            for (let i = 0; i < syms.length; i += 20) {
+                try { const qs = await fetchBatchQuotes(syms.slice(i, i + 20)); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            const results = [];
+            const CONCURRENCY = 4;
+            let currentIndex = 0;
+
+            const next = async () => {
+                if (currentIndex >= syms.length || !scanningRef.current) return;
+                const idx = currentIndex++;
+                const sym = syms[idx];
+
+                setProg({ done: Math.min(idx + 1, syms.length), total: syms.length, phase: `Sorgulanıyor: ${sym}...` });
+
+                try {
+                    const s = await buildStock(sym, qm[sym], spyClosesRef.current);
+                    if (s && scanningRef.current) {
+                        results.push(s);
+                        setStocks(prev => {
+                            const dict = {};
+                            prev.forEach(p => dict[p.symbol] = p);
+                            dict[s.symbol] = s;
+                            return Object.values(dict);
+                        });
+                    }
+                } catch (e) { }
+
+                // Soft delay jitter
+                await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
+                return next();
+            };
+
+            const workers = Array.from({ length: Math.min(CONCURRENCY, syms.length) }, () => next());
+            await Promise.all(workers);
+
+            if (!scanningRef.current) return;
+
+            await storage.saveSnapshot(results);
+            await storage.saveFullData(results, demo);
+            setStocks(results);
+            setLastUpdated(new Date());
+        } catch (e) {
+            console.error("Tarama Hatası:", e);
+        } finally {
+            setScanning(false);
+            scanningRef.current = false;
         }
-        await storage.saveSnapshot(results);
-        setLastUpdated(new Date()); setScanning(false);
     }, []);
 
-    useEffect(() => { scan(true, false); }, []);
-    useEffect(() => { if (!scanning) scan(isDemo, pennyOn); }, [pennyOn]);
+    useEffect(() => {
+        if (isInitRef.current) return;
+        isInitRef.current = true;
+
+        const init = async () => {
+            const cached = await storage.getFullData();
+            const now = Date.now();
+            let shouldScan = true;
+            if (cached && cached.data?.length > 0) {
+                setStocks(cached.data);
+                setIsDemo(!!cached.isDemo);
+                setLastUpdated(new Date(cached.at));
+                if (!cached.isDemo && (now - cached.at) < 60 * 60 * 1000) {
+                    shouldScan = false;
+                }
+            }
+            if (shouldScan) {
+                scan(false, pennyOn, false);
+            }
+        };
+        init();
+    }, [scan, pennyOn]);
+    // Remove the extra scanning loop attached to pennyOn that was overriding the init.
+    // Instead we will rely on a dedicated toggle function.
+    const togglePenny = () => {
+        const next = !pennyOn;
+        setPennyOn(next);
+        scan(isDemo, next, false);
+    };
 
     const selectStock = s => { setSelected(s); setShowDetail(true); };
 
@@ -187,8 +263,8 @@ export default function App() {
 
                     <div className="flex items-center gap-3">
                         <div className="hidden lg:flex items-center gap-1.5 mr-4 bg-zinc-800/20 rounded-2xl p-1 border border-zinc-800/40">
-                            <button onClick={() => { setIsDemo(true); scan(true, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDemo ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Simülasyon</button>
-                            <button onClick={() => { setIsDemo(false); scan(false, pennyOn); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isDemo ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Canlı Veri</button>
+                            <button onClick={() => { setIsDemo(true); scan(true, pennyOn, true); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isDemo ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Simülasyon</button>
+                            <button onClick={() => { setIsDemo(false); scan(false, pennyOn, true); }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isDemo ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-zinc-300"}`}>Canlı Veri</button>
                         </div>
                         <button onClick={toggleTheme} className={`w-11 h-11 flex items-center justify-center rounded-2xl border ${theme.border} ${isDark ? "bg-zinc-900 text-amber-400" : "bg-white text-indigo-600"} hover:scale-105 transition-all shadow-lg`}>
                             {isDark ? "🔆" : "🌙"}
@@ -349,6 +425,12 @@ export default function App() {
                 {tab === "portfolio" && <Portfolio stocks={stocks} tg={tg} onNotify={showToast} />}
                 {tab === "alarms" && <Alarms stocks={stocks} tg={tg} />}
                 {tab === "analysis" && <SigAnalysis stocks={stocks} />}
+                {tab === "history" && <HistoryTab onLoad={(data, at) => {
+                    setStocks(data);
+                    setLastUpdated(new Date(at));
+                    setTab("scanner");
+                    showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
+                }} />}
                 {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} />}
             </main>
 

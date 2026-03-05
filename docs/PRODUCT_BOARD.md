@@ -31,17 +31,17 @@
 
 | ID | Task | Etki | Efor | Durum | Bağımlılık | Çıktı |
 |---|---|---|---|---|---|---|
-| T-001 | Legacy `App.jsx` temizliği ve tek giriş noktasına düşürme | Yüksek | S | Ready | - | Kod sadeleşir, bakım maliyeti düşer |
+| T-001 | Legacy `App.jsx` temizliği ve tek giriş noktasına düşürme | Yüksek | S | Done | - | Kod sadeleşir, bakım maliyeti düşer |
 | T-002 | ESLint + Prettier + import/order standardı | Orta | S | Backlog | T-001 | Kod kalitesi standardize |
-| T-003 | Vitest + React Testing Library kurulumu | Yüksek | M | Ready | T-002 | Temel test altyapısı |
-| T-004 | `scoring`, `analysis`, `indicators` için unit test paketi | Çok Yüksek | M | Backlog | T-003 | Finansal hesaplama güvenilirliği |
+| T-003 | Vitest + React Testing Library kurulumu | Yüksek | M | Done | T-002 | Temel test altyapısı |
+| T-004 | `scoring`, `analysis`, `indicators` için unit test paketi | Çok Yüksek | M | Done | T-003 | Finansal hesaplama güvenilirliği |
 | T-005 | GitHub Actions: build + test + lint | Yüksek | S | Backlog | T-003 | CI kalite kapısı |
-| T-006 | API katmanında retry/backoff + cache TTL (SWR benzeri) | Yüksek | M | Backlog | - | Rate limit dayanıklılığı |
+| T-006 | API katmanında retry/backoff + concurrency (Pool bazlı proxy) | Yüksek | M | Done | - | Rate limit dayanıklılığı |
 | T-007 | Tarama iptal/yeniden deneme mekanizması (AbortController) | Orta | M | Backlog | T-006 | UX iyileşir |
 | T-008 | Sonuç listesinde sanallaştırma (`react-window`) | Orta | M | Backlog | - | Büyük listede performans |
 | T-009 | Portföy P/L dashboard (günlük, haftalık, aylık) | Yüksek | M | Backlog | - | Ürün değeri artar |
 | T-010 | Alarm motoruna gelişmiş koşullar (cross, RSI zone, volume spike) | Yüksek | M | Backlog | - | Daha güçlü otomasyon |
-| T-011 | Skor açıklanabilirliği paneli (neden BUY/SELL?) | Çok Yüksek | M | Ready | - | Güven ve şeffaflık artar |
+| T-011 | Skor açıklanabilirliği paneli (neden BUY/SELL?) | Çok Yüksek | M | Done | - | Güven ve şeffaflık artar |
 | T-012 | Sektör bazlı benchmark (SPY + sector ETF kıyas) | Yüksek | L | Backlog | T-006 | Strateji kıyaslama |
 | T-013 | Kullanıcı onboarding + preset stratejiler (growth/swing/value) | Orta | M | Backlog | - | Aktivasyon artar |
 | T-014 | Çoklu dil (TR/EN) i18n altyapısı | Düşük | M | Backlog | - | Erişilebilirlik |
@@ -82,6 +82,8 @@ Bu ortamda GitHub’a doğrudan erişim denemeleri `403 CONNECT tunnel failed` i
 | F-004 | Trade Journal + notlar + etiketleme | Öğrenme döngüsü | M | Backlog |
 | F-005 | Risk paneli (position sizing, max drawdown uyarısı) | Sermaye koruması | M | Backlog |
 | F-006 | Screener preset marketplace (Top Gainers, Momentum, Minervini) | Hızlı kullanım | M | Ready |
+| F-007 | Canlı veri modunda başlatma ve geçmiş veriyi önbelleğe alma (1 Saat Cache) | Hızlı yüklenme, ekranın boş kalmaması | S | Done |
+| F-008 | Geçmiş Taramalar Kaydı ve Görüntüleme Sekmesi (History Tab) | Karşılaştırmalı test | S | Done |
 
 ---
 

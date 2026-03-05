@@ -15,19 +15,21 @@ const YF_PROXIES = [
 
 export async function yfFetch(url) {
     try {
-        const r = await fetch(url, { headers: { "Accept": "application/json" }, signal: AbortSignal.timeout(5000) });
+        const r = await fetch(url, { headers: { "Accept": "application/json" }, signal: AbortSignal.timeout(3000) });
         if (r.ok) return r.json();
     } catch { }
 
-    for (const proxy of YF_PROXIES) {
-        try {
-            const r = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(10000) });
+    try {
+        const promises = YF_PROXIES.map(async (proxy) => {
+            const r = await fetch(proxy + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
             if (r.ok) return r.json();
-        } catch (e) {
-            console.warn(`Proxy failed: ${proxy}`, e.message);
-        }
+            throw new Error(`Proxy failed: ${proxy}`);
+        });
+        return await Promise.any(promises);
+    } catch (e) {
+        console.warn("All proxies failed for", url);
+        return null;
     }
-    return null;
 }
 
 export async function fetchHistory(sym) {
