@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { tgSend, buildDailyMsg } from '../lib/telegram';
 import { storage } from '../lib/storage';
 
-export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange }) {
+export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange, aiConfig, onAiConfigChange }) {
     const [testR, setTestR] = useState(null);
     const [aiReport, setAiReport] = useState("Loading analysis report...");
 
@@ -53,6 +53,36 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
                     <button onClick={sendNow} disabled={!tg.enabled || !stocks.length} className="py-4 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 text-sm font-bold disabled:opacity-30 transition-all uppercase tracking-widest">Rapor Al</button>
                 </div>
                 {testR && <div className="mt-4 text-xs font-bold text-center uppercase tracking-widest animate-pulse text-cyan-400">{testR}</div>}
+            </div>
+
+
+            <div className="rounded-[2.5rem] border border-cyan-500/30 bg-cyan-600/10 p-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-xl text-cyan-400 shadow-lg shadow-cyan-500/5">🔐</div>
+                    <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest">AI API Ayarları</h3>
+                </div>
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Claude API Key</label>
+                        <input
+                            type="password"
+                            value={aiConfig?.anthropicApiKey || ""}
+                            onChange={e => onAiConfigChange({ ...aiConfig, anthropicApiKey: e.target.value })}
+                            placeholder="Anthropic API key girin"
+                            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-cyan-500/50 transition-all font-mono"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Claude Proxy URL</label>
+                        <input
+                            value={aiConfig?.anthropicProxy || ""}
+                            onChange={e => onAiConfigChange({ ...aiConfig, anthropicProxy: e.target.value })}
+                            placeholder="https://corsproxy.io/?url="
+                            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-cyan-500/50 transition-all font-mono"
+                        />
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Bu değerler tarayıcıda saklanır ve çalışma anında env değerlerini override eder.</p>
+                </div>
             </div>
 
             <div className="rounded-[2.5rem] border border-violet-500/30 bg-violet-600/10 p-8 shadow-2xl">
