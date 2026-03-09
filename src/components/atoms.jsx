@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { SECTORS } from '../constants/sectors';
 import { REC_CLS } from '../constants/tabs';
 
@@ -6,13 +8,54 @@ import { REC_CLS } from '../constants/tabs';
 // ═══════════════════════════════════════════════════════════════
 
 export function Tooltip({ text, children }) {
+    const triggerRef = useRef(null);
+    const [open, setOpen] = useState(false);
+    const [pos, setPos] = useState({ top: 0, left: 0 });
+
+    const updatePosition = () => {
+        if (!triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+        setPos({ top: rect.top - 8, left: rect.left + rect.width / 2 });
+    };
+
+    useEffect(() => {
+        if (!open) return;
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [open]);
+
     return (
-        <div className="group relative flex items-center justify-center">
+        <div
+            ref={triggerRef}
+            className="relative flex items-center justify-center"
+            onMouseEnter={() => {
+                updatePosition();
+                setOpen(true);
+            }}
+            onMouseLeave={() => setOpen(false)}
+            onFocus={() => {
+                updatePosition();
+                setOpen(true);
+            }}
+            onBlur={() => setOpen(false)}
+        >
             {children}
-            <div className="pointer-events-none absolute bottom-full mb-2 hidden w-48 rounded-lg bg-zinc-900 border border-zinc-800 p-2 text-[10px] text-zinc-300 shadow-2xl group-hover:block z-50 animate-in fade-in slide-in-from-bottom-1">
-                {text}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-900" />
-            </div>
+            {open && createPortal(
+                <div
+                    className="pointer-events-none fixed z-[9999] w-48 -translate-x-1/2 -translate-y-full rounded-lg border border-zinc-800 bg-zinc-900 p-2 text-[10px] text-zinc-300 shadow-2xl animate-in fade-in slide-in-from-bottom-1"
+                    style={{ top: `${pos.top}px`, left: `${pos.left}px` }}
+                    role="tooltip"
+                >
+                    {text}
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 border-8 border-transparent border-t-zinc-900" />
+                </div>,
+                document.body,
+            )}
         </div>
     );
 }
@@ -139,4 +182,3 @@ export function CandleBadge({ patterns }) {
 export function fmtMcap(n) {
     if (!n) return "—"; if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`; if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`; return `$${(n / 1e6).toFixed(0)}M`;
 }
-
