@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchNews } from '../lib/api';
 import { Chip, Ring, Spark, SecDot, RsBadge, StageBadge, MvnBadge, CandleBadge, fmtMcap } from './atoms';
 import { formatPrice } from '../lib/format';
+import { askClaude } from '../lib/ai';
 
 export function StockDetail({ stock, onClose, isModal, priceDecimals = 5 }) {
     const [aiText, setAiText] = useState("");
@@ -58,12 +59,13 @@ GEREKSİNİMLER:
 5) Kesin giriş/çıkış noktaları ve nihai karar`;
 
         try {
-            const url = "https://api.anthropic.com/v1/messages";
-            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-            const r = await fetch(proxyUrl, { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": "REPLACE_WITH_REAL_KEY", "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: "claude-3-5-sonnet-20241022", max_tokens: 1000, messages: [{ role: "user", content: p }] }) });
-            const d = await r.json();
-            setAiText(d.content?.[0]?.text || "Yanıt oluşturulamadı. Doğrulama gerekiyor.");
-        } catch { setAiText("⚠️ Sinirsel Bağlantı Çevrimdışı (Proxy Hatası). Konsolu kontrol edin."); }
+            const txt = await askClaude(p, 1000);
+            setAiText(txt || "Yanıt oluşturulamadı. Doğrulama gerekiyor.");
+        } catch (e) {
+            setAiText(e.message === "missing_api_key"
+                ? "⚠️ Claude API anahtarı eksik. .env dosyasına VITE_ANTHROPIC_API_KEY ekleyin."
+                : "⚠️ Sinirsel Bağlantı Çevrimdışı (Proxy/API Hatası). Konsolu kontrol edin.");
+        }
         setLoading(false);
     };
 
