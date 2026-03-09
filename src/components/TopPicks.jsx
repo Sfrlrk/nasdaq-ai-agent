@@ -6,7 +6,7 @@ export function TopPicks({ stocks, onSelect, priceDecimals }) {
     const medals = ["🥇", "🥈", "🥉"];
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center px-1">
+            <div className="flex flex-col items-start gap-2 px-1">
                 <h2 className="text-sm font-display font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
                     <span className="w-8 h-px bg-cyan-500/50"></span>
                     INSTITUTIONAL ALPHA PICKS
@@ -29,7 +29,7 @@ export function TopPicks({ stocks, onSelect, priceDecimals }) {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <SecDot sector={s.sector} />
-                                        <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{s.sector.split(" ")[1]}</span>
+                                        <span className="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{s.sector.split(" ")[1] || "MARKET"}</span>
                                     </div>
                                 </div>
                                 <Ring score={s.score} size={48} stroke={4} />
