@@ -417,10 +417,13 @@ export default function App() {
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 text-[10px]">▼</div>
                                 </div>
                             </div>
-                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-                                {FILTERS.map(([f, l]) => (
-                                    <button key={f} onClick={() => setFilter(f)} className={`flex-shrink-0 text-[10px] font-black uppercase tracking-[0.12em] px-6 py-4 rounded-[1.5rem] border transition-all duration-300 ${filter === f ? "bg-cyan-500 text-black border-cyan-500 shadow-xl shadow-cyan-500/20" : "bg-zinc-900/40 border-zinc-800/60 text-zinc-500 hover:border-zinc-700 hover:bg-zinc-800/40 hover:text-zinc-300"}`}>{l}</button>
-                                ))}
+                            <div className="relative xl:min-w-[280px]">
+                                <select value={filter} onChange={e => setFilter(e.target.value)} className="w-full appearance-none bg-zinc-900/40 hover:bg-zinc-900/60 border border-zinc-800/60 rounded-[1.5rem] px-8 pr-12 py-4 text-xs text-zinc-300 outline-none focus:border-cyan-500/40 transition-all font-black uppercase tracking-[0.15em] shadow-lg shadow-black/20 cursor-pointer">
+                                    {FILTERS.map(([f, l]) => (
+                                        <option key={f} value={f}>{l}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600 text-[10px]">▼</div>
                             </div>
                         </div>
 
