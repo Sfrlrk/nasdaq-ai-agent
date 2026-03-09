@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Chip } from './atoms';
 import { storage } from '../lib/storage';
 import { askClaude as askClaudeApi } from '../lib/ai';
+import { config } from '../config/env';
 
 export function SigAnalysis({ stocks }) {
     const [log, setLog] = useState([]);
@@ -53,7 +54,7 @@ export function SigAnalysis({ stocks }) {
             setAiT(await askClaudeApi(prompt, 800));
         } catch (e) {
             setAiT(e.message === "missing_api_key"
-                ? "⚠️ Claude API anahtarı eksik. .env dosyasına VITE_ANTHROPIC_API_KEY ekleyin."
+                ? `⚠️ Claude API anahtarı eksik. Ayarlar sekmesinden Claude API key girin veya ${config.envNames.anthropicApiKey} tanımlayın.`
                 : "⚠️ Proxy/API üzerinden AI bağlantı hatası.");
         }
         setLd(false);

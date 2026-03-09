@@ -1,13 +1,14 @@
+import { getRuntimeConfig } from "../config/env";
+
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_PROXY = "https://corsproxy.io/?url=";
 
 function getApiKey() {
-    return import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+    return getRuntimeConfig().apiKeys.anthropic;
 }
 
 function buildEndpoint() {
-    const base = import.meta.env.VITE_ANTHROPIC_PROXY || DEFAULT_PROXY;
-    return `${base}${encodeURIComponent(ANTHROPIC_URL)}`;
+    const runtime = getRuntimeConfig();
+    return `${runtime.api.anthropicProxy}${encodeURIComponent(ANTHROPIC_URL)}`;
 }
 
 export async function askClaude(prompt, maxTokens = 1000) {
@@ -38,4 +39,3 @@ export async function askClaude(prompt, maxTokens = 1000) {
     const d = await r.json();
     return d.content?.map?.(b => b.text || "").join("") || "Yanıt oluşturulamadı.";
 }
-

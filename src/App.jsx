@@ -21,6 +21,7 @@ import { Portfolio } from "./components/Portfolio";
 import { Alarms } from "./components/Alarms";
 import { SigAnalysis } from "./components/SigAnalysis";
 import { Settings } from "./components/Settings";
+import { AI_CONFIG_STORAGE_KEY, config as envConfig } from "./config/env";
 import { HistoryTab } from "./components/HistoryTab";
 
 // ═══════════════════════════════════════════════════════════════
@@ -45,6 +46,7 @@ export default function App() {
     const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
     const [display, setDisplay] = useState({ priceDecimals: 5 });
     const [scanSettings, setScanSettings] = useState({ newStockMinutes: 5, refreshMinutes: 60 });
+    const [aiConfig, setAiConfig] = useState({ anthropicApiKey: "", anthropicProxy: envConfig.api.anthropicProxy });
     const [isDark, setIsDark] = useState(true);
     const spyClosesRef = useRef([]);
     const scanAbortRef = useRef(null);
@@ -91,6 +93,15 @@ export default function App() {
                 });
             }
         }).catch(() => { });
+        storage.get(AI_CONFIG_STORAGE_KEY).then(r => {
+            if (r?.value) {
+                const parsed = JSON.parse(r.value);
+                setAiConfig({
+                    anthropicApiKey: parsed?.anthropicApiKey || "",
+                    anthropicProxy: parsed?.anthropicProxy || envConfig.api.anthropicProxy,
+                });
+            }
+        }).catch(() => { });
     }, []);
 
     const saveTg = cfg => { setTg(cfg); storage.set("tg_cfg_v4", JSON.stringify(cfg)).catch(() => { }); };
@@ -108,6 +119,15 @@ export default function App() {
         storage.set("scan_cfg_v1", JSON.stringify(next)).catch(() => { });
     };
     const showToast = n => { setToast(n); setTimeout(() => setToast(null), 5000); };
+
+    const saveAiConfig = cfg => {
+        const next = {
+            anthropicApiKey: (cfg?.anthropicApiKey || "").trim(),
+            anthropicProxy: (cfg?.anthropicProxy || "").trim() || envConfig.api.anthropicProxy,
+        };
+        setAiConfig(next);
+        storage.set(AI_CONFIG_STORAGE_KEY, JSON.stringify(next)).catch(() => { });
+    };
 
     // Daily report
     useEffect(() => {
@@ -515,7 +535,7 @@ export default function App() {
                     setTab("scanner");
                     showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
                 }} />}
-                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} />}
+                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} aiConfig={aiConfig} onAiConfigChange={saveAiConfig} />}
             </main>
 
             {/* Mobile Dock */}

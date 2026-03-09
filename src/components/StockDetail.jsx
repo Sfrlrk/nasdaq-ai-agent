@@ -3,6 +3,7 @@ import { fetchNews } from '../lib/api';
 import { Chip, Ring, Spark, SecDot, RsBadge, StageBadge, MvnBadge, CandleBadge, fmtMcap } from './atoms';
 import { formatPrice } from '../lib/format';
 import { askClaude } from '../lib/ai';
+import { config } from '../config/env';
 
 export function StockDetail({ stock, onClose, isModal, priceDecimals = 5 }) {
     const [aiText, setAiText] = useState("");
@@ -63,7 +64,7 @@ GEREKSİNİMLER:
             setAiText(txt || "Yanıt oluşturulamadı. Doğrulama gerekiyor.");
         } catch (e) {
             setAiText(e.message === "missing_api_key"
-                ? "⚠️ Claude API anahtarı eksik. .env dosyasına VITE_ANTHROPIC_API_KEY ekleyin."
+                ? `⚠️ Claude API anahtarı eksik. Ayarlar sekmesinden Claude API key girin veya ${config.envNames.anthropicApiKey} tanımlayın.`
                 : "⚠️ Sinirsel Bağlantı Çevrimdışı (Proxy/API Hatası). Konsolu kontrol edin.");
         }
         setLoading(false);
