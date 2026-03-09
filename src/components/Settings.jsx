@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { tgSend, buildDailyMsg } from '../lib/telegram';
 import { storage } from '../lib/storage';
+import { requestBrowserNotificationPermission, sendBrowserNotification } from '../lib/notifications';
 
 export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange, aiConfig, onAiConfigChange, appSettings, onAppSettingsChange }) {
     const [testR, setTestR] = useState(null);
@@ -10,8 +11,14 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
         storage.getReport().then(setAiReport);
     }, [stocks]);
 
-    const test = async () => { const ok = await tgSend(tg.botToken, tg.chatId, "✅ NASDAQ AI Agent v4.0 Connected!\nCandlestick Patterns + Minervini + RS Rating + VCP Active."); setTestR(ok ? "✅ Dispatched!" : "❌ Error."); };
+    const test = async () => { const ok = await tgSend(tg.botToken, tg.chatId, "✅ NASDAQ AI Agent v4.0 Connected!\nCandlestick Patterns + Minervini + RS Rating + VCP Active."); setTestR(ok ? "✅ Telegram bildirimi gönderildi!" : "❌ Telegram hatası."); };
     const sendNow = async () => { if (!stocks.length) return; const ok = await tgSend(tg.botToken, tg.chatId, buildDailyMsg(stocks)); setTestR(ok ? "✅ Report Sent!" : "❌ Dispatch Failed."); if (ok) { const t = new Date().toDateString(); setLastReport(t); storage.set("last_report_v4", t).catch(() => { }); } };
+
+    const testBrowser = async () => {
+        await requestBrowserNotificationPermission();
+        const sent = sendBrowserNotification("🧪 Tarayıcı Test Bildirimi", "NASDAQ AI Agent tarayıcı bildirim kanalı aktif.", tg.browserEnabled);
+        setTestR(sent ? "✅ Tarayıcı bildirimi gönderildi!" : "⚠️ Tarayıcı bildirimi için izin gerekli.");
+    };
 
     const copyReport = () => {
         navigator.clipboard.writeText(aiReport);
@@ -19,7 +26,7 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
         setTimeout(() => setTestR(null), 3000);
     };
 
-    const toggles = [["enabled", "Telegram Uyarıları"], ["dailyReport", "Sabah Raporu (09:00)"], ["alarmNotif", "Varlık Alarmları"], ["slTpNotif", "Zarar Durdur/Kar Al Takibi"]];
+    const toggles = [["enabled", "Telegram Uyarıları"], ["dailyReport", "Telegram Sabah Raporu (09:00)"], ["alarmNotif", "Telegram Varlık Alarmları"], ["slTpNotif", "Telegram Zarar Durdur/Kar Al"], ["browserEnabled", "Tarayıcı Bildirimleri"], ["browserAlarmNotif", "Tarayıcı Varlık Alarmları"], ["browserSlTpNotif", "Tarayıcı SL/TP Takibi"], ["browserSystemNotif", "Tarayıcı Sistem Olayları"]];
 
     return (
         <div className="space-y-6">
@@ -48,8 +55,9 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
                         </div>
                     ))}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={test} disabled={!tg.botToken || !tg.chatId} className="py-4 rounded-2xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-sm font-bold disabled:opacity-30 transition-all uppercase tracking-widest">Test Gönder</button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <button onClick={test} disabled={!tg.botToken || !tg.chatId} className="py-4 rounded-2xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-sm font-bold disabled:opacity-30 transition-all uppercase tracking-widest">Telegram Test</button>
+                    <button onClick={testBrowser} className="py-4 rounded-2xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all uppercase tracking-widest">Tarayıcı Test</button>
                     <button onClick={sendNow} disabled={!tg.enabled || !stocks.length} className="py-4 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 text-sm font-bold disabled:opacity-30 transition-all uppercase tracking-widest">Rapor Al</button>
                 </div>
                 {testR && <div className="mt-4 text-xs font-bold text-center uppercase tracking-widest animate-pulse text-cyan-400">{testR}</div>}

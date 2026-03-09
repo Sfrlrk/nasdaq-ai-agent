@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { tgSend, alarmMsg } from '../lib/telegram';
+import { browserNotificationPermission, requestBrowserNotificationPermission, sendBrowserNotification } from '../lib/notifications';
 import { storage } from '../lib/storage';
 
 const ATYPES = [
@@ -13,7 +14,7 @@ const ATYPES = [
 
 const NO_VAL_TYPES = ["minervini", "vcp", "macd_bull", "stoch_os", "cci_os", "golden"];
 
-export function Alarms({ stocks, tg }) {
+export function Alarms({ stocks, tg, onNotify }) {
     const [alarms, setAlarms] = useState([]);
     const [form, setForm] = useState({ symbol: "", type: "price_above", value: "" });
     const fired = useRef(new Set());
@@ -43,8 +44,12 @@ export function Alarms({ stocks, tg }) {
             if (hit) {
                 fired.current.add(a.id); ch = true;
                 const msg = alarmMsg(a, s);
-                if (tg.enabled && tg.botToken) tgSend(tg.botToken, tg.chatId, msg);
-                if (Notification.permission === "granted") new Notification(`⚡ ${a.symbol}`);
+                if (tg.enabled && tg.botToken && tg.alarmNotif) tgSend(tg.botToken, tg.chatId, msg);
+                const browserSent = sendBrowserNotification(`⚡ Alarm: ${a.symbol}`, msg.replace(/<[^>]+>/g, ""), tg.browserEnabled && tg.browserAlarmNotif);
+                if (onNotify) onNotify({ title: `⚡ Alarm: ${a.symbol}`, msg: `${a.type} ${a.value}`, browser: false });
+                if (!browserSent && tg.browserEnabled && tg.browserAlarmNotif && browserNotificationPermission() !== "granted" && onNotify) {
+                    onNotify({ title: "Tarayıcı bildirimi kapalı", msg: "Ayarlar > Alarm sekmesinden izin verin.", browser: false });
+                }
                 return { ...a, triggered: true, at: new Date().toISOString() };
             }
             return a;
@@ -60,13 +65,13 @@ export function Alarms({ stocks, tg }) {
 
     return (
         <div>
-            {Notification.permission !== "granted" && (
+            {browserNotificationPermission() !== "granted" && (
                 <div className="mb-6 rounded-3xl border border-yellow-500/30 bg-yellow-500/10 p-4 flex justify-between items-center shadow-lg">
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">🔔</span>
                         <span className="text-sm font-bold text-yellow-500 uppercase tracking-widest">Notifications Disabled</span>
                     </div>
-                    <button onClick={() => Notification.requestPermission()} className="text-xs font-bold bg-yellow-500 text-black px-4 py-2 rounded-xl hover:bg-yellow-400 transition-all">Enable Now</button>
+                    <button onClick={() => requestBrowserNotificationPermission()} className="text-xs font-bold bg-yellow-500 text-black px-4 py-2 rounded-xl hover:bg-yellow-400 transition-all">Enable Now</button>
                 </div>
             )}
             {tg.enabled && tg.botToken && (

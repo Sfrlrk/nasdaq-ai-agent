@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { tgSend, slTpMsg } from '../lib/telegram';
 import { StageBadge, RsBadge, Tooltip } from './atoms';
 import { storage } from '../lib/storage';
+import { sendBrowserNotification } from '../lib/notifications';
 
 export function Portfolio({ stocks, tg, onNotify }) {
     const [holdings, setHoldings] = useState([]);
@@ -18,8 +19,20 @@ export function Portfolio({ stocks, tg, onNotify }) {
         holdings.forEach(h => {
             const l = stocks.find(s => s.symbol === h.symbol); if (!l) return;
             const slK = `sl_${h.symbol}`, tpK = `tp_${h.symbol}`;
-            if (h.sl && l.price <= parseFloat(h.sl) && !fired.current.has(slK)) { fired.current.add(slK); const msg = slTpMsg(h, "SL", l.price); onNotify({ title: `🛑 STOP LOSS: ${h.symbol}`, msg }); if (tg.enabled && tg.botToken) tgSend(tg.botToken, tg.chatId, msg); }
-            if (h.tp && l.price >= parseFloat(h.tp) && !fired.current.has(tpK)) { fired.current.add(tpK); const msg = slTpMsg(h, "TP", l.price); onNotify({ title: `🎯 TARGET HIT: ${h.symbol}`, msg }); if (tg.enabled && tg.botToken) tgSend(tg.botToken, tg.chatId, msg); }
+            if (h.sl && l.price <= parseFloat(h.sl) && !fired.current.has(slK)) {
+                fired.current.add(slK);
+                const msg = slTpMsg(h, "SL", l.price);
+                onNotify({ title: `🛑 STOP LOSS: ${h.symbol}`, msg, browser: false });
+                sendBrowserNotification(`🛑 STOP LOSS: ${h.symbol}`, msg.replace(/<[^>]+>/g, ""), tg.browserEnabled && tg.browserSlTpNotif);
+                if (tg.enabled && tg.botToken && tg.slTpNotif) tgSend(tg.botToken, tg.chatId, msg);
+            }
+            if (h.tp && l.price >= parseFloat(h.tp) && !fired.current.has(tpK)) {
+                fired.current.add(tpK);
+                const msg = slTpMsg(h, "TP", l.price);
+                onNotify({ title: `🎯 TARGET HIT: ${h.symbol}`, msg, browser: false });
+                sendBrowserNotification(`🎯 TARGET HIT: ${h.symbol}`, msg.replace(/<[^>]+>/g, ""), tg.browserEnabled && tg.browserSlTpNotif);
+                if (tg.enabled && tg.botToken && tg.slTpNotif) tgSend(tg.botToken, tg.chatId, msg);
+            }
         });
     }, [stocks, holdings]);
 
