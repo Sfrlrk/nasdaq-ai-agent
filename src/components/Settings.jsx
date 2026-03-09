@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { tgSend, buildDailyMsg } from '../lib/telegram';
 import { storage } from '../lib/storage';
 
-export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange, aiConfig, onAiConfigChange }) {
+export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange, aiConfig, onAiConfigChange, appSettings, onAppSettingsChange }) {
     const [testR, setTestR] = useState(null);
     const [aiReport, setAiReport] = useState("Loading analysis report...");
 
@@ -82,6 +82,42 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
                         />
                     </div>
                     <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Bu değerler tarayıcıda saklanır ve çalışma anında env değerlerini override eder.</p>
+                </div>
+            </div>
+
+            <div className="rounded-[2.5rem] border border-cyan-500/30 bg-cyan-600/10 p-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-xl text-cyan-400 shadow-lg shadow-cyan-500/5">🎛️</div>
+                    <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest">Strateji Parametreleri</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                        ["buyScoreThreshold", "BUY Skor Eşiği", "0", "100", "1"],
+                        ["oversoldRsiThreshold", "Oversold RSI Eşiği", "0", "100", "1"],
+                        ["oversoldStochThreshold", "Oversold Stoch Eşiği", "0", "100", "1"],
+                        ["oversoldCciThreshold", "Oversold CCI Eşiği", "-500", "500", "1"],
+                        ["highVolumeThreshold", "Yüksek Hacim Eşiği", "1", "20", "0.1"],
+                        ["relativeStrengthThreshold", "RS Eşiği", "1", "100", "1"],
+                        ["scanBatchSize", "Batch Boyutu", "5", "100", "1"],
+                        ["scanConcurrency", "Eşzamanlı İşçi", "1", "10", "1"],
+                        ["batchDelayMs", "Batch Gecikmesi (ms)", "0", "10000", "50"],
+                        ["workerDelayMinMs", "İşçi Min Gecikme (ms)", "0", "5000", "50"],
+                        ["workerDelayJitterMs", "İşçi Jitter (ms)", "0", "5000", "50"],
+                        ["cacheFreshMinutes", "Cache Geçerlilik (dk)", "1", "1440", "1"],
+                    ].map(([key, label, min, max, step]) => (
+                        <div key={key} className="space-y-2">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">{label}</label>
+                            <input
+                                type="number"
+                                min={min}
+                                max={max}
+                                step={step}
+                                value={appSettings?.[key]}
+                                onChange={e => onAppSettingsChange({ ...appSettings, [key]: e.target.value })}
+                                className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-cyan-500/50 transition-all font-mono"
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
 

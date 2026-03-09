@@ -24,6 +24,45 @@ import { Settings } from "./components/Settings";
 import { AI_CONFIG_STORAGE_KEY, config as envConfig } from "./config/env";
 import { HistoryTab } from "./components/HistoryTab";
 
+const APP_SETTINGS_STORAGE_KEY = "app_settings_v1";
+const DEFAULT_APP_SETTINGS = {
+    buyScoreThreshold: 65,
+    oversoldRsiThreshold: 35,
+    oversoldStochThreshold: 25,
+    oversoldCciThreshold: -100,
+    highVolumeThreshold: 2,
+    relativeStrengthThreshold: 80,
+    scanBatchSize: 20,
+    scanConcurrency: 4,
+    batchDelayMs: 1000,
+    workerDelayMinMs: 400,
+    workerDelayJitterMs: 300,
+    cacheFreshMinutes: 60,
+};
+
+const toNum = (val, fallback) => {
+    const parsed = Number(val);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeAppSettings = cfg => {
+    const next = { ...DEFAULT_APP_SETTINGS, ...(cfg || {}) };
+    return {
+        buyScoreThreshold: Math.max(0, Math.min(100, toNum(next.buyScoreThreshold, DEFAULT_APP_SETTINGS.buyScoreThreshold))),
+        oversoldRsiThreshold: Math.max(0, Math.min(100, toNum(next.oversoldRsiThreshold, DEFAULT_APP_SETTINGS.oversoldRsiThreshold))),
+        oversoldStochThreshold: Math.max(0, Math.min(100, toNum(next.oversoldStochThreshold, DEFAULT_APP_SETTINGS.oversoldStochThreshold))),
+        oversoldCciThreshold: Math.max(-500, Math.min(500, toNum(next.oversoldCciThreshold, DEFAULT_APP_SETTINGS.oversoldCciThreshold))),
+        highVolumeThreshold: Math.max(1, Math.min(20, toNum(next.highVolumeThreshold, DEFAULT_APP_SETTINGS.highVolumeThreshold))),
+        relativeStrengthThreshold: Math.max(1, Math.min(100, toNum(next.relativeStrengthThreshold, DEFAULT_APP_SETTINGS.relativeStrengthThreshold))),
+        scanBatchSize: Math.max(5, Math.min(100, Math.round(toNum(next.scanBatchSize, DEFAULT_APP_SETTINGS.scanBatchSize)))),
+        scanConcurrency: Math.max(1, Math.min(10, Math.round(toNum(next.scanConcurrency, DEFAULT_APP_SETTINGS.scanConcurrency)))),
+        batchDelayMs: Math.max(0, Math.min(10000, Math.round(toNum(next.batchDelayMs, DEFAULT_APP_SETTINGS.batchDelayMs)))),
+        workerDelayMinMs: Math.max(0, Math.min(5000, Math.round(toNum(next.workerDelayMinMs, DEFAULT_APP_SETTINGS.workerDelayMinMs)))),
+        workerDelayJitterMs: Math.max(0, Math.min(5000, Math.round(toNum(next.workerDelayJitterMs, DEFAULT_APP_SETTINGS.workerDelayJitterMs)))),
+        cacheFreshMinutes: Math.max(1, Math.min(1440, Math.round(toNum(next.cacheFreshMinutes, DEFAULT_APP_SETTINGS.cacheFreshMinutes)))),
+    };
+};
+
 // ═══════════════════════════════════════════════════════════════
 // CORE APPLICATION
 // ═══════════════════════════════════════════════════════════════
@@ -46,6 +85,7 @@ export default function App() {
     const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
     const [display, setDisplay] = useState({ priceDecimals: 5 });
     const [scanSettings, setScanSettings] = useState({ newStockMinutes: 5, refreshMinutes: 60 });
+    const [appSettings, setAppSettings] = useState(DEFAULT_APP_SETTINGS);
     const [aiConfig, setAiConfig] = useState({ anthropicApiKey: "", anthropicProxy: envConfig.api.anthropicProxy });
     const [isDark, setIsDark] = useState(true);
     const spyClosesRef = useRef([]);
@@ -102,6 +142,11 @@ export default function App() {
                 });
             }
         }).catch(() => { });
+        storage.get(APP_SETTINGS_STORAGE_KEY).then(r => {
+            if (r?.value) {
+                setAppSettings(normalizeAppSettings(JSON.parse(r.value)));
+            }
+        }).catch(() => { });
     }, []);
 
     const saveTg = cfg => { setTg(cfg); storage.set("tg_cfg_v4", JSON.stringify(cfg)).catch(() => { }); };
@@ -119,6 +164,11 @@ export default function App() {
         storage.set("scan_cfg_v1", JSON.stringify(next)).catch(() => { });
     };
     const showToast = n => { setToast(n); setTimeout(() => setToast(null), 5000); };
+    const saveAppSettings = cfg => {
+        const next = normalizeAppSettings(cfg);
+        setAppSettings(next);
+        storage.set(APP_SETTINGS_STORAGE_KEY, JSON.stringify(next)).catch(() => { });
+    };
 
     const saveAiConfig = cfg => {
         const next = {
@@ -178,12 +228,12 @@ export default function App() {
             const qm = {};
             for (let i = 0; i < syms.length; i += 20) {
                 if (abortCtrl.signal.aborted || !scanningRef.current) break;
-                try { const qs = await fetchBatchQuotes(syms.slice(i, i + 20), { signal: abortCtrl.signal }); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
-                await new Promise(r => setTimeout(r, 1000));
+                try { const qs = await fetchBatchQuotes(syms.slice(i, i + appSettings.scanBatchSize), { signal: abortCtrl.signal }); qs.forEach(q => { qm[q.symbol] = q; }); } catch { }
+                await new Promise(r => setTimeout(r, appSettings.batchDelayMs));
             }
 
             const results = [];
-            const CONCURRENCY = 4;
+            const CONCURRENCY = appSettings.scanConcurrency;
             let currentIndex = 0;
 
             const next = async () => {
@@ -207,7 +257,7 @@ export default function App() {
                 } catch (e) { }
 
                 // Soft delay jitter
-                await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
+                await new Promise(r => setTimeout(r, appSettings.workerDelayMinMs + Math.random() * appSettings.workerDelayJitterMs));
                 return next();
             };
 
@@ -231,7 +281,7 @@ export default function App() {
                 scanAbortRef.current = null;
             }
         }
-    }, []);
+    }, [appSettings.batchDelayMs, appSettings.scanBatchSize, appSettings.scanConcurrency, appSettings.workerDelayJitterMs, appSettings.workerDelayMinMs]);
 
     useEffect(() => {
         if (isInitRef.current) return;
@@ -245,7 +295,7 @@ export default function App() {
                 setStocks(cached.data);
                 setIsDemo(!!cached.isDemo);
                 setLastUpdated(new Date(cached.at));
-                if (!cached.isDemo && (now - cached.at) < 60 * 60 * 1000) {
+                if (!cached.isDemo && (now - cached.at) < appSettings.cacheFreshMinutes * 60 * 1000) {
                     shouldScan = false;
                 }
             }
@@ -254,7 +304,7 @@ export default function App() {
             }
         };
         init();
-    }, [scan, pennyOn]);
+    }, [scan, pennyOn, appSettings.cacheFreshMinutes]);
 
     useEffect(() => {
         if (isDemo) return;
@@ -306,14 +356,14 @@ export default function App() {
     const visible = baseList.filter(s => {
         const ms = s.symbol.toLowerCase().includes(search.toLowerCase());
         const mf = filter === "ALL" ? true
-            : filter === "BUY" ? s.score >= 65
-                : filter === "OVERSOLD" ? (s.rsi < 35 || s.stochK < 25 || s.cci < -100)
+            : filter === "BUY" ? s.score >= appSettings.buyScoreThreshold
+                : filter === "OVERSOLD" ? (s.rsi < appSettings.oversoldRsiThreshold || s.stochK < appSettings.oversoldStochThreshold || s.cci < appSettings.oversoldCciThreshold)
                     : filter === "UPTREND" ? s.trend === "UP"
-                        : filter === "HIGH_VOL" ? s.volRatio > 2
+                        : filter === "HIGH_VOL" ? s.volRatio > appSettings.highVolumeThreshold
                             : filter === "GOLDEN" ? s.cross === "GOLDEN"
                                 : filter === "MVN" ? s.minervini?.pass
                                     : filter === "VCP" ? s.isVCP
-                                        : filter === "RS80" ? (s.rsRating && s.rsRating >= 80)
+                                        : filter === "RS80" ? (s.rsRating && s.rsRating >= appSettings.relativeStrengthThreshold)
                                             : filter === "CANDLE" ? s.candlePatterns?.length > 0
                                                 : true;
         return ms && mf;
@@ -535,7 +585,7 @@ export default function App() {
                     setTab("scanner");
                     showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
                 }} />}
-                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} aiConfig={aiConfig} onAiConfigChange={saveAiConfig} />}
+                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} aiConfig={aiConfig} onAiConfigChange={saveAiConfig} appSettings={appSettings} onAppSettingsChange={saveAppSettings} />}
             </main>
 
             {/* Mobile Dock */}
