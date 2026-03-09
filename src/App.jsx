@@ -9,6 +9,7 @@ import { fetchHistory, fetchBatchQuotes, buildStock, mockStock } from "./lib/api
 import { tgSend, buildDailyMsg } from "./lib/telegram";
 import { storage } from "./lib/storage";
 import { formatPrice, normalizePriceDecimals } from "./lib/format";
+import { sendBrowserNotification } from "./lib/notifications";
 
 // Components
 import { Ring, Chip, Spark, MvnBadge, RsBadge, StageBadge } from "./components/atoms";
@@ -26,6 +27,21 @@ import { HistoryTab } from "./components/HistoryTab";
 import { SimResultsTab } from "./components/SimResultsTab";
 
 const APP_SETTINGS_STORAGE_KEY = "app_settings_v1";
+const DEFAULT_TG_SETTINGS = {
+    botToken: "",
+    chatId: "",
+    enabled: false,
+    dailyReport: true,
+    alarmNotif: true,
+    slTpNotif: true,
+    browserEnabled: true,
+    browserAlarmNotif: true,
+    browserSlTpNotif: true,
+    browserSystemNotif: true,
+};
+
+const normalizeTgSettings = cfg => ({ ...DEFAULT_TG_SETTINGS, ...(cfg || {}) });
+
 const DEFAULT_APP_SETTINGS = {
     buyScoreThreshold: 65,
     oversoldRsiThreshold: 35,
@@ -83,7 +99,7 @@ export default function App() {
     const [lastUpdated, setLastUpdated] = useState(null);
     const [toast, setToast] = useState(null);
     const [lastReport, setLastReport] = useState("");
-    const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
+    const [tg, setTg] = useState(DEFAULT_TG_SETTINGS);
     const [display, setDisplay] = useState({ priceDecimals: 5 });
     const [scanSettings, setScanSettings] = useState({ newStockMinutes: 5, refreshMinutes: 60 });
     const [appSettings, setAppSettings] = useState(DEFAULT_APP_SETTINGS);
@@ -117,7 +133,7 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        storage.get("tg_cfg_v4").then(r => { if (r?.value) setTg(JSON.parse(r.value)); }).catch(() => { });
+        storage.get("tg_cfg_v4").then(r => { if (r?.value) setTg(normalizeTgSettings(JSON.parse(r.value))); }).catch(() => { });
         storage.get("last_report_v4").then(r => { if (r?.value) setLastReport(r.value); }).catch(() => { });
         storage.get("display_cfg_v1").then(r => {
             if (r?.value) {
@@ -150,7 +166,7 @@ export default function App() {
         }).catch(() => { });
     }, []);
 
-    const saveTg = cfg => { setTg(cfg); storage.set("tg_cfg_v4", JSON.stringify(cfg)).catch(() => { }); };
+    const saveTg = cfg => { const next = normalizeTgSettings(cfg); setTg(next); storage.set("tg_cfg_v4", JSON.stringify(next)).catch(() => { }); };
     const saveDisplay = cfg => {
         const next = { priceDecimals: normalizePriceDecimals(cfg?.priceDecimals) };
         setDisplay(next);
@@ -165,6 +181,10 @@ export default function App() {
         storage.set("scan_cfg_v1", JSON.stringify(next)).catch(() => { });
     };
     const showToast = n => { setToast(n); setTimeout(() => setToast(null), 5000); };
+    const notify = ({ title, msg, browser = false }) => {
+        showToast({ title, msg });
+        if (browser) sendBrowserNotification(title, msg, tg.browserEnabled);
+    };
     const saveAppSettings = cfg => {
         const next = normalizeAppSettings(cfg);
         setAppSettings(next);
@@ -186,8 +206,13 @@ export default function App() {
             const now = new Date(), today = now.toDateString();
             if (tg.enabled && tg.dailyReport && tg.botToken && tg.chatId && lastReport !== today && stocks.length > 0) {
                 if (now.getHours() === 9 && now.getMinutes() < 5) {
-                    tgSend(tg.botToken, tg.chatId, buildDailyMsg(stocks)).then(ok => {
-                        if (ok) { setLastReport(today); storage.set("last_report_v4", today).catch(() => { }); }
+                    const dailyMsg = buildDailyMsg(stocks);
+                    tgSend(tg.botToken, tg.chatId, dailyMsg).then(ok => {
+                        if (ok) {
+                            setLastReport(today);
+                            storage.set("last_report_v4", today).catch(() => { });
+                            sendBrowserNotification("📊 Günlük Rapor Gönderildi", "Telegram günlük raporu başarıyla gönderildi.", tg.browserEnabled && tg.browserSystemNotif);
+                        }
                     });
                 }
             }
@@ -271,6 +296,7 @@ export default function App() {
             await storage.saveFullData(results, demo);
             setStocks(results);
             setLastUpdated(new Date());
+            sendBrowserNotification("✅ Tarama Tamamlandı", `${results.length} varlık güncellendi.`, tg.browserEnabled && tg.browserSystemNotif);
         } catch (e) {
             if (e?.name !== "AbortError") {
                 console.error("Tarama Hatası:", e);
@@ -282,7 +308,7 @@ export default function App() {
                 scanAbortRef.current = null;
             }
         }
-    }, [appSettings.batchDelayMs, appSettings.scanBatchSize, appSettings.scanConcurrency, appSettings.workerDelayJitterMs, appSettings.workerDelayMinMs]);
+    }, [appSettings.batchDelayMs, appSettings.scanBatchSize, appSettings.scanConcurrency, appSettings.workerDelayJitterMs, appSettings.workerDelayMinMs, tg.browserEnabled, tg.browserSystemNotif]);
 
     useEffect(() => {
         if (isInitRef.current) return;
@@ -577,15 +603,19 @@ export default function App() {
                 {/* Tab Router */}
                 {tab === "sectors" && <SectorView stocks={stocks} onSelect={selectStock} priceDecimals={display.priceDecimals} />}
                 {tab === "minervini" && <MinerviniScreen stocks={stocks} onSelect={selectStock} priceDecimals={display.priceDecimals} />}
-                {tab === "portfolio" && <Portfolio stocks={stocks} tg={tg} onNotify={showToast} />}
-                {tab === "alarms" && <Alarms stocks={stocks} tg={tg} />}
+                {tab === "portfolio" && <Portfolio stocks={stocks} tg={tg} onNotify={notify} />}
+                {tab === "alarms" && <Alarms stocks={stocks} tg={tg} onNotify={notify} />}
                 {tab === "analysis" && <SigAnalysis stocks={stocks} />}
                 {tab === "simResults" && <SimResultsTab stocks={stocks} />}
                 {tab === "history" && <HistoryTab onLoad={(data, at) => {
                     setStocks(data);
                     setLastUpdated(new Date(at));
                     setTab("scanner");
-                    showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
+                    notify({
+                        title: "Geçmiş Yüklendi",
+                        msg: new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.",
+                        browser: tg.browserSystemNotif,
+                    });
                 }} />}
                 {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} aiConfig={aiConfig} onAiConfigChange={saveAiConfig} appSettings={appSettings} onAppSettingsChange={saveAppSettings} />}
             </main>
