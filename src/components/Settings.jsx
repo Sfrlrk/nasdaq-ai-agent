@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { tgSend, buildDailyMsg } from '../lib/telegram';
 import { storage } from '../lib/storage';
 
-export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange }) {
+export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange, scanSettings, onScanChange }) {
     const [testR, setTestR] = useState(null);
     const [aiReport, setAiReport] = useState("Loading analysis report...");
 
@@ -72,6 +72,41 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport, disp
                         className="w-full sm:w-56 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-violet-500/50 transition-all font-mono"
                     />
                     <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Varsayılan: 5 | Aralık: 0 - 8</p>
+                </div>
+            </div>
+
+            <div className="rounded-[2.5rem] border border-cyan-500/30 bg-cyan-600/10 p-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-xl text-cyan-400 shadow-lg shadow-cyan-500/5">⏱️</div>
+                    <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest">Tarama Sıklığı</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Yeni Hisse Sorgu Aralığı (dakika)</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="60"
+                            step="1"
+                            value={scanSettings.newStockMinutes}
+                            onChange={e => onScanChange({ ...scanSettings, newStockMinutes: e.target.value })}
+                            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-cyan-500/50 transition-all font-mono"
+                        />
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Varsayılan: 5 dk</p>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Mevcut Hisseleri Yenileme (dakika)</label>
+                        <input
+                            type="number"
+                            min="5"
+                            max="240"
+                            step="5"
+                            value={scanSettings.refreshMinutes}
+                            onChange={e => onScanChange({ ...scanSettings, refreshMinutes: e.target.value })}
+                            className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-cyan-500/50 transition-all font-mono"
+                        />
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Varsayılan: 60 dk</p>
+                    </div>
                 </div>
             </div>
 

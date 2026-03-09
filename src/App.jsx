@@ -44,6 +44,7 @@ export default function App() {
     const [lastReport, setLastReport] = useState("");
     const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
     const [display, setDisplay] = useState({ priceDecimals: 5 });
+    const [scanSettings, setScanSettings] = useState({ newStockMinutes: 5, refreshMinutes: 60 });
     const [isDark, setIsDark] = useState(true);
     const spyClosesRef = useRef([]);
     const scanAbortRef = useRef(null);
@@ -81,6 +82,15 @@ export default function App() {
                 setDisplay({ priceDecimals: normalizePriceDecimals(parsed?.priceDecimals) });
             }
         }).catch(() => { });
+        storage.get("scan_cfg_v1").then(r => {
+            if (r?.value) {
+                const parsed = JSON.parse(r.value);
+                setScanSettings({
+                    newStockMinutes: Math.max(1, Number(parsed?.newStockMinutes) || 5),
+                    refreshMinutes: Math.max(5, Number(parsed?.refreshMinutes) || 60)
+                });
+            }
+        }).catch(() => { });
     }, []);
 
     const saveTg = cfg => { setTg(cfg); storage.set("tg_cfg_v4", JSON.stringify(cfg)).catch(() => { }); };
@@ -88,6 +98,14 @@ export default function App() {
         const next = { priceDecimals: normalizePriceDecimals(cfg?.priceDecimals) };
         setDisplay(next);
         storage.set("display_cfg_v1", JSON.stringify(next)).catch(() => { });
+    };
+    const saveScanSettings = cfg => {
+        const next = {
+            newStockMinutes: Math.max(1, Number(cfg?.newStockMinutes) || 5),
+            refreshMinutes: Math.max(5, Number(cfg?.refreshMinutes) || 60)
+        };
+        setScanSettings(next);
+        storage.set("scan_cfg_v1", JSON.stringify(next)).catch(() => { });
     };
     const showToast = n => { setToast(n); setTimeout(() => setToast(null), 5000); };
 
@@ -217,6 +235,28 @@ export default function App() {
         };
         init();
     }, [scan, pennyOn]);
+
+    useEffect(() => {
+        if (isDemo) return;
+
+        const newStockMs = scanSettings.newStockMinutes * 60 * 1000;
+        const refreshMs = scanSettings.refreshMinutes * 60 * 1000;
+
+        const quickId = setInterval(() => {
+            if (scanningRef.current) return;
+            scan(false, pennyOn, false);
+        }, newStockMs);
+
+        const refreshId = setInterval(() => {
+            if (scanningRef.current) return;
+            scan(false, pennyOn, true);
+        }, refreshMs);
+
+        return () => {
+            clearInterval(quickId);
+            clearInterval(refreshId);
+        };
+    }, [scan, isDemo, pennyOn, scanSettings.newStockMinutes, scanSettings.refreshMinutes]);
     // Remove the extra scanning loop attached to pennyOn that was overriding the init.
     // Instead we will rely on a dedicated toggle function.
 
@@ -472,7 +512,7 @@ export default function App() {
                     setTab("scanner");
                     showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
                 }} />}
-                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} />}
+                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} scanSettings={scanSettings} onScanChange={saveScanSettings} />}
             </main>
 
             {/* Mobile Dock */}
