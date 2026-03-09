@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Chip } from './atoms';
 import { storage } from '../lib/storage';
+import { askClaude as askClaudeApi } from '../lib/ai';
 
 export function SigAnalysis({ stocks }) {
     const [log, setLog] = useState([]);
@@ -48,18 +49,14 @@ export function SigAnalysis({ stocks }) {
     const askClaude = async () => {
         if (!res || res.empty) return; setLd(true); setAiT("");
         try {
-            const url = "https://api.anthropic.com/v1/messages";
-            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-            const r = await fetch(proxyUrl, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "claude-3-5-sonnet-20241022", max_tokens: 800,
-                    messages: [{ role: "user", content: `Bir Nasdaq sinyal analistisin. Türkçe cevap ver, maksimum 200 kelime.\nToplam: ${res.total} sinyal, %${res.winRate} başarı, ortalama %${res.avgRet}\nMinervini Başarı Oranı: %${res.mvnWr} (${res.mvnN} sinyal)\nVCP Başarı Oranı: %${res.vcpWr} (${res.vcpN} sinyal)\nKarara Göre Doğruluk: ${Object.entries(res.byRec).map(([k, v]) => `${k}:%${v.wr}(${v.n})`).join(", ")}\nEn Büyük Kayıplar: ${res.mistakes?.slice(0, 5).map(m => `${m.symbol}:${m.rec}→%${m.outcome.ret}`).join(", ")}\nSoru: 1) Minervini/VCP çalışıyor mu? 2) Zayıf yönler nerede? 3) 2 spesifik iyileştirme öner.` }]
-                })
-            });
-            const d = await r.json();
-            setAiT(d.content?.map(b => b.text || "").join("") || "Yanıt alınamadı.");
-        } catch { setAiT("⚠️ Proxy üzerinden AI bağlantı hatası."); } setLd(false);
+            const prompt = `Bir Nasdaq sinyal analistisin. Türkçe cevap ver, maksimum 200 kelime.\nToplam: ${res.total} sinyal, %${res.winRate} başarı, ortalama %${res.avgRet}\nMinervini Başarı Oranı: %${res.mvnWr} (${res.mvnN} sinyal)\nVCP Başarı Oranı: %${res.vcpWr} (${res.vcpN} sinyal)\nKarara Göre Doğruluk: ${Object.entries(res.byRec).map(([k, v]) => `${k}:%${v.wr}(${v.n})`).join(", ")}\nEn Büyük Kayıplar: ${res.mistakes?.slice(0, 5).map(m => `${m.symbol}:${m.rec}→%${m.outcome.ret}`).join(", ")}\nSoru: 1) Minervini/VCP çalışıyor mu? 2) Zayıf yönler nerede? 3) 2 spesifik iyileştirme öner.`;
+            setAiT(await askClaudeApi(prompt, 800));
+        } catch (e) {
+            setAiT(e.message === "missing_api_key"
+                ? "⚠️ Claude API anahtarı eksik. .env dosyasına VITE_ANTHROPIC_API_KEY ekleyin."
+                : "⚠️ Proxy/API üzerinden AI bağlantı hatası.");
+        }
+        setLd(false);
     };
 
     return (
