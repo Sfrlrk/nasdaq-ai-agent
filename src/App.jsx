@@ -8,6 +8,7 @@ import { TABS } from "./constants/tabs";
 import { fetchHistory, fetchBatchQuotes, buildStock, mockStock } from "./lib/api";
 import { tgSend, buildDailyMsg } from "./lib/telegram";
 import { storage } from "./lib/storage";
+import { formatPrice, normalizePriceDecimals } from "./lib/format";
 
 // Components
 import { Ring, Chip, Spark, MvnBadge, RsBadge, StageBadge } from "./components/atoms";
@@ -42,6 +43,7 @@ export default function App() {
     const [toast, setToast] = useState(null);
     const [lastReport, setLastReport] = useState("");
     const [tg, setTg] = useState({ botToken: "", chatId: "", enabled: false, dailyReport: true, alarmNotif: true, slTpNotif: true });
+    const [display, setDisplay] = useState({ priceDecimals: 5 });
     const [isDark, setIsDark] = useState(true);
     const spyClosesRef = useRef([]);
     const scanAbortRef = useRef(null);
@@ -73,9 +75,20 @@ export default function App() {
     useEffect(() => {
         storage.get("tg_cfg_v4").then(r => { if (r?.value) setTg(JSON.parse(r.value)); }).catch(() => { });
         storage.get("last_report_v4").then(r => { if (r?.value) setLastReport(r.value); }).catch(() => { });
+        storage.get("display_cfg_v1").then(r => {
+            if (r?.value) {
+                const parsed = JSON.parse(r.value);
+                setDisplay({ priceDecimals: normalizePriceDecimals(parsed?.priceDecimals) });
+            }
+        }).catch(() => { });
     }, []);
 
     const saveTg = cfg => { setTg(cfg); storage.set("tg_cfg_v4", JSON.stringify(cfg)).catch(() => { }); };
+    const saveDisplay = cfg => {
+        const next = { priceDecimals: normalizePriceDecimals(cfg?.priceDecimals) };
+        setDisplay(next);
+        storage.set("display_cfg_v1", JSON.stringify(next)).catch(() => { });
+    };
     const showToast = n => { setToast(n); setTimeout(() => setToast(null), 5000); };
 
     // Daily report
@@ -265,7 +278,7 @@ export default function App() {
                 </div>
             )}
 
-            {showDetail && selected && <StockDetail stock={selected} onClose={() => setShowDetail(false)} isModal={true} />}
+            {showDetail && selected && <StockDetail stock={selected} onClose={() => setShowDetail(false)} isModal={true} priceDecimals={display.priceDecimals} />}
 
             {/* Header */}
             <header className={`border-b ${theme.border} ${theme.header} backdrop-blur-xl sticky top-0 z-40 transition-all duration-300`} style={{ paddingTop: "env(safe-area-inset-top)" }}>
@@ -344,7 +357,7 @@ export default function App() {
                             </div>
                         )}
 
-                        {stocks.length > 0 && <TopPicks stocks={tab === "penny" ? pennyStocks : visible.length > 0 ? visible : stocks} onSelect={selectStock} />}
+                        {stocks.length > 0 && <TopPicks stocks={tab === "penny" ? pennyStocks : visible.length > 0 ? visible : stocks} onSelect={selectStock} priceDecimals={display.priceDecimals} />}
 
                         {/* Filters */}
                         <div className="flex flex-col xl:flex-row gap-6">
@@ -383,7 +396,7 @@ export default function App() {
                                             <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Filtreleri ayarlayın veya yeni veri döngüsünü bekleyin</p>
                                         </div>
                                     )}
-                                    {visible.map(s => <StockCard key={s.symbol} s={s} onSelect={selectStock} onAlarm={s => { setSelected(s); setTab("alarms"); }} onPort={s => { setSelected(s); setTab("portfolio"); }} />)}
+                                    {visible.map(s => <StockCard key={s.symbol} s={s} onSelect={selectStock} onAlarm={s => { setSelected(s); setTab("alarms"); }} onPort={s => { setSelected(s); setTab("portfolio"); }} priceDecimals={display.priceDecimals} />)}
                                 </div>
                                 {/* Desktop Table */}
                                 <div className="hidden md:block rounded-[2.5rem] border border-zinc-800/60 bg-zinc-900/40 shadow-2xl overflow-hidden backdrop-blur-md">
@@ -404,7 +417,7 @@ export default function App() {
                                                             <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">{s.sector.split(" ")[1] || "MARKET"}</div>
                                                         </td>
                                                         <td className="px-8 py-6 font-display font-bold text-white text-base">
-                                                            <div><span className="text-zinc-600 text-[10px] block mb-0.5">PRICE</span> ${s.price}</div>
+                                                            <div><span className="text-zinc-600 text-[10px] block mb-0.5">PRICE</span> ${formatPrice(s.price, display.priceDecimals)}</div>
                                                             <div className={`text-[10px] flex items-center gap-1 font-mono mt-1 ${s.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                                                                 {s.change >= 0 ? "▲" : "▼"} {Math.abs(s.change)}%
                                                             </div>
@@ -448,8 +461,8 @@ export default function App() {
                 )}
 
                 {/* Tab Router */}
-                {tab === "sectors" && <SectorView stocks={stocks} onSelect={selectStock} />}
-                {tab === "minervini" && <MinerviniScreen stocks={stocks} onSelect={selectStock} />}
+                {tab === "sectors" && <SectorView stocks={stocks} onSelect={selectStock} priceDecimals={display.priceDecimals} />}
+                {tab === "minervini" && <MinerviniScreen stocks={stocks} onSelect={selectStock} priceDecimals={display.priceDecimals} />}
                 {tab === "portfolio" && <Portfolio stocks={stocks} tg={tg} onNotify={showToast} />}
                 {tab === "alarms" && <Alarms stocks={stocks} tg={tg} />}
                 {tab === "analysis" && <SigAnalysis stocks={stocks} />}
@@ -459,7 +472,7 @@ export default function App() {
                     setTab("scanner");
                     showToast("Geçmiş Yüklendi", new Date(at).toLocaleString() + " tarihli kayıt ekrana yansıtıldı.");
                 }} />}
-                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} />}
+                {tab === "settings" && <Settings tg={tg} onChange={saveTg} stocks={stocks} lastReport={lastReport} setLastReport={setLastReport} display={display} onDisplayChange={saveDisplay} />}
             </main>
 
             {/* Mobile Dock */}

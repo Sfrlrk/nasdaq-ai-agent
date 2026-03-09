@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { tgSend, buildDailyMsg } from '../lib/telegram';
 import { storage } from '../lib/storage';
 
-export function Settings({ tg, onChange, stocks, lastReport, setLastReport }) {
+export function Settings({ tg, onChange, stocks, lastReport, setLastReport, display, onDisplayChange }) {
     const [testR, setTestR] = useState(null);
     const [aiReport, setAiReport] = useState("Loading analysis report...");
 
@@ -55,6 +55,26 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport }) {
                 {testR && <div className="mt-4 text-xs font-bold text-center uppercase tracking-widest animate-pulse text-cyan-400">{testR}</div>}
             </div>
 
+            <div className="rounded-[2.5rem] border border-violet-500/30 bg-violet-600/10 p-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-xl text-violet-400 shadow-lg shadow-violet-500/5">💲</div>
+                    <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest">Fiyat Görünümü</h3>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase ml-1">Virgülden Sonra Basamak</label>
+                    <input
+                        type="number"
+                        min="0"
+                        max="8"
+                        step="1"
+                        value={display.priceDecimals}
+                        onChange={e => onDisplayChange({ ...display, priceDecimals: e.target.value })}
+                        className="w-full sm:w-56 bg-zinc-800/50 border border-zinc-700/50 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-violet-500/50 transition-all font-mono"
+                    />
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Varsayılan: 5 | Aralık: 0 - 8</p>
+                </div>
+            </div>
+
             <div className="rounded-[2.5rem] border border-cyan-500/30 bg-zinc-900/60 p-8 shadow-2xl relative overflow-hidden group">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -85,4 +105,3 @@ export function Settings({ tg, onChange, stocks, lastReport, setLastReport }) {
         </div>
     );
 }
-

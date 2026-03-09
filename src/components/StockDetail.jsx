@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchNews } from '../lib/api';
 import { Chip, Ring, Spark, SecDot, RsBadge, StageBadge, MvnBadge, CandleBadge, fmtMcap } from './atoms';
+import { formatPrice } from '../lib/format';
 
-export function StockDetail({ stock, onClose, isModal }) {
+export function StockDetail({ stock, onClose, isModal, priceDecimals = 5 }) {
     const [aiText, setAiText] = useState("");
     const [loading, setLoading] = useState(false);
     const [news, setNews] = useState(null);
@@ -26,7 +27,7 @@ export function StockDetail({ stock, onClose, isModal }) {
         const mvnStr = stock.minervini ? `${stock.minervini.passCount}/8 koşul (${stock.minervini.pass ? "GEÇTİ" : "KALDI"})` : "—";
         const p = `Kıdemli bir Wall Street kantitatif analisti gibi davran. ${stock.symbol} için profesyonel bir teknik analiz sağla. TÜRKÇE cevap ver, maksimum 250 kelime. Kesin ve uygulanabilir ol.
 
-VARLIK: ${stock.symbol} | $${stock.price} (${stock.change >= 0 ? "+" : ""}${stock.change}%) | ${stock.sector}
+VARLIK: ${stock.symbol} | $${formatPrice(stock.price, priceDecimals)} (${stock.change >= 0 ? "+" : ""}${stock.change}%) | ${stock.sector}
 YZ PUANI: ${stock.score}/100 (${stock.rec}) | Aşama: ${stock.stage?.label || "?"} | RS Puanı: ${stock.rsRating || "?"}
 
 TEKNİK SİNYALLER:
@@ -99,7 +100,7 @@ GEREKSİNİMLER:
                 </div>
 
                 <div className="flex items-end gap-5">
-                    <div className={`text-4xl font-display font-black ${up ? "text-emerald-400" : "text-red-400"} tracking-tighter`}>${stock.price}</div>
+                    <div className={`text-4xl font-display font-black ${up ? "text-emerald-400" : "text-red-400"} tracking-tighter`}>${formatPrice(stock.price, priceDecimals)}</div>
                     <div className={`text-xl font-bold mb-1.5 ${up ? "text-emerald-500/60" : "text-red-500/60"}`}>
                         {up ? "▲" : "▼"} {Math.abs(stock.change)}%
                     </div>
@@ -196,7 +197,7 @@ GEREKSİNİMLER:
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-zinc-600 text-[8px] uppercase tracking-widest mb-1">Current</span>
-                            <span className="text-cyan-400 font-mono">${stock.price}</span>
+                            <span className="text-cyan-400 font-mono">${formatPrice(stock.price, priceDecimals)}</span>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-zinc-600 text-[8px] uppercase tracking-widest mb-1">High</span>
