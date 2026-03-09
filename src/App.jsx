@@ -23,6 +23,7 @@ import { SigAnalysis } from "./components/SigAnalysis";
 import { Settings } from "./components/Settings";
 import { AI_CONFIG_STORAGE_KEY, config as envConfig } from "./config/env";
 import { HistoryTab } from "./components/HistoryTab";
+import { SimResultsTab } from "./components/SimResultsTab";
 
 const APP_SETTINGS_STORAGE_KEY = "app_settings_v1";
 const DEFAULT_APP_SETTINGS = {
@@ -579,6 +580,7 @@ export default function App() {
                 {tab === "portfolio" && <Portfolio stocks={stocks} tg={tg} onNotify={showToast} />}
                 {tab === "alarms" && <Alarms stocks={stocks} tg={tg} />}
                 {tab === "analysis" && <SigAnalysis stocks={stocks} />}
+                {tab === "simResults" && <SimResultsTab stocks={stocks} />}
                 {tab === "history" && <HistoryTab onLoad={(data, at) => {
                     setStocks(data);
                     setLastUpdated(new Date(at));

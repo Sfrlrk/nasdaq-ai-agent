@@ -74,7 +74,8 @@ export const storage = {
 
             const hist = await get('nasdaq_full_data_history') || [];
             hist.push(entry);
-            if (hist.length > 5) hist.shift(); // Keep last 5 to not blow up indexeddb quota limit
+            const MAX_HISTORY_ENTRIES = 500;
+            if (hist.length > MAX_HISTORY_ENTRIES) hist.splice(0, hist.length - MAX_HISTORY_ENTRIES);
             await set('nasdaq_full_data_history', hist);
         } catch (e) { console.error("Error saving full data:", e); }
     },

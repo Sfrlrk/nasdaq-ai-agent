@@ -6,6 +6,7 @@ export const TABS = [
     { id: "portfolio", icon: "💼", l: "Portfolio" },
     { id: "alarms", icon: "🔔", l: "Alarms" },
     { id: "analysis", icon: "🔬", l: "Audit" },
+    { id: "simResults", icon: "🧪", l: "Sim Sonuç" },
     { id: "history", icon: "🕰️", l: "Geçmiş" },
     { id: "settings", icon: "⚙️", l: "Settings" },
 ];
