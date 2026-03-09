@@ -1,6 +1,7 @@
 import { Chip, Ring, Spark, SigBar, SecDot, RsBadge, StageBadge, Tooltip, MvnBadge } from './atoms';
+import { formatPrice } from '../lib/format';
 
-export function StockCard({ s, onSelect, onAlarm, onPort }) {
+export function StockCard({ s, onSelect, onAlarm, onPort, priceDecimals }) {
     const up = s.change >= 0;
     return (
         <div onClick={() => onSelect(s)} className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 rounded-[2rem] p-6 active:scale-[0.98] transition-all cursor-pointer hover:border-cyan-500/30 group shadow-xl hover:shadow-cyan-500/5">
@@ -18,7 +19,7 @@ export function StockCard({ s, onSelect, onAlarm, onPort }) {
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="text-right">
-                        <div className="text-xl font-display font-black text-white tracking-tighter">${s.price}</div>
+                        <div className="text-xl font-display font-black text-white tracking-tighter">${formatPrice(s.price, priceDecimals)}</div>
                         <div className={`text-xs font-black font-mono flex items-center justify-end gap-1 ${up ? "text-emerald-400" : "text-red-400"}`}>
                             {up ? "▲" : "▼"} {Math.abs(s.change)}%
                         </div>
@@ -66,4 +67,3 @@ export function StockCard({ s, onSelect, onAlarm, onPort }) {
         </div>
     );
 }
-

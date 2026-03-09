@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { SECTORS } from '../constants/sectors';
 import { Ring } from './atoms';
+import { formatPrice } from '../lib/format';
 
-export function SectorView({ stocks, onSelect }) {
+export function SectorView({ stocks, onSelect, priceDecimals }) {
     const [open, setOpen] = useState(null);
     const data = Object.entries(SECTORS).map(([sec, info]) => {
         const ss = stocks.filter(s => s.sector === sec);
@@ -50,7 +51,7 @@ export function SectorView({ stocks, onSelect }) {
                                         <div key={s.symbol} onClick={(e) => { e.stopPropagation(); onSelect(s); }} className="p-5 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 hover:border-cyan-500/30 transition-all flex justify-between items-center group/item">
                                             <div>
                                                 <div className="text-sm font-display font-black text-white group-hover/item:text-cyan-400 transition-colors uppercase">{s.symbol}</div>
-                                                <div className="text-[10px] font-mono text-zinc-600 mt-1">${s.price}</div>
+                                                <div className="text-[10px] font-mono text-zinc-600 mt-1">${formatPrice(s.price, priceDecimals)}</div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <div className={`text-xs font-black font-mono ${s.change >= 0 ? "text-emerald-500" : "text-red-500"}`}>

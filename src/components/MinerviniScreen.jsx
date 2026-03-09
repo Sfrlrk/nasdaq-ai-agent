@@ -1,6 +1,7 @@
 import { Ring, Chip, MvnBadge, RsBadge, StageBadge, Tooltip } from './atoms';
+import { formatPrice } from '../lib/format';
 
-export function MinerviniScreen({ stocks, onSelect }) {
+export function MinerviniScreen({ stocks, onSelect, priceDecimals }) {
     const passed = [...stocks].filter(s => s.minervini?.pass || s.isVCP || (s.rsRating && s.rsRating >= 80)).sort((a, b) => b.score - a.score);
     const stats = [
         ["📐 Minervini", stocks.filter(s => s.minervini?.pass).length, "text-amber-400", "Aşama 2 yükseliş trendleri için Mark Minervini'nin Trend Şablonu gereksinimleri."],
@@ -58,7 +59,7 @@ export function MinerviniScreen({ stocks, onSelect }) {
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="bg-zinc-800/40 rounded-2xl p-3 border border-zinc-800/30">
                                     <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Fiyat</div>
-                                    <div className="font-display font-bold text-white text-lg">${s.price}</div>
+                                    <div className="font-display font-bold text-white text-lg">${formatPrice(s.price, priceDecimals)}</div>
                                 </div>
                                 <div className="bg-zinc-800/40 rounded-2xl p-3 border border-zinc-800/30">
                                     <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Hacim Oranı</div>
@@ -98,7 +99,7 @@ export function MinerviniScreen({ stocks, onSelect }) {
                                         <div className="text-lg font-display font-black text-white group-hover:text-amber-400 transition-colors uppercase tracking-tighter">{s.symbol}</div>
                                         <div className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{s.sector.split(" ")[1]}</div>
                                     </td>
-                                    <td className="px-6 py-6 font-display font-black text-zinc-100 text-lg">${s.price}</td>
+                                    <td className="px-6 py-6 font-display font-black text-zinc-100 text-lg">${formatPrice(s.price, priceDecimals)}</td>
                                     <td className="px-6 py-6"><Ring score={s.score} size={42} stroke={3} /></td>
                                     <td className="px-6 py-6"><MvnBadge mvn={s.minervini} /></td>
                                     <td className="px-6 py-6"><StageBadge stage={s.stage} /></td>
@@ -119,4 +120,3 @@ export function MinerviniScreen({ stocks, onSelect }) {
         </div>
     );
 }
-

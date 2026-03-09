@@ -1,6 +1,7 @@
 import { Chip, Ring, Spark, SecDot, RsBadge } from './atoms';
+import { formatPrice } from '../lib/format';
 
-export function TopPicks({ stocks, onSelect }) {
+export function TopPicks({ stocks, onSelect, priceDecimals }) {
     const top = [...stocks].sort((a, b) => b.score - a.score).slice(0, 10);
     const medals = ["🥇", "🥈", "🥉"];
     return (
@@ -35,7 +36,7 @@ export function TopPicks({ stocks, onSelect }) {
                             </div>
 
                             <div className="flex items-baseline gap-2 mb-4 relative z-10">
-                                <span className="text-3xl font-display font-black text-zinc-100 tracking-tight">${s.price}</span>
+                                <span className="text-3xl font-display font-black text-zinc-100 tracking-tight">${formatPrice(s.price, priceDecimals)}</span>
                                 <span className={`text-xs font-black font-mono ${up ? "text-emerald-500" : "text-red-500"}`}>
                                     {up ? "▲" : "▼"}{Math.abs(s.change)}%
                                 </span>
